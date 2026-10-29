@@ -211,6 +211,7 @@
   .face .rule { font: 700 14px/1.15 var(--ui); margin-top: auto; }
   .face .dia { width: 100%; height: 40px; }
   .face .by { font: 500 12px/1.1 var(--ui); color: var(--chalk-dim); }
+  .nw { white-space: nowrap; }
   .face .outs { display: grid; gap: 5px; margin-top: auto; }
   /* Narrow cards: each outcome is a small label over an icon and the result. Wide cards: one line each, "✓ Open: 2 points". */
   .out {
@@ -726,8 +727,11 @@
   }
 
   const faceClass = (key) => ({ gold: ' gold', counter: ' paper', special: ' paper' })[CARDS[key].kind] || '';
+  // Card names never break across lines on narrow cards ("Mid-" / "range").
+  const keep = (t) => t.replace(/Mid-range|Close Out|Slam Dunk|Buzzer Beater/g, '<span class="nw">$&</span>');
   function faceInner(key) {
-    const c = CARDS[key];
+    const c = { ...CARDS[key] };
+    for (const f of ['rule', 'by']) if (c[f]) c[f] = keep(c[f]);
     if (c.kind === 'shot') {
       return `<span class="head"><span class="name">${c.name}</span><span class="pts">${c.pts}</span></span>${diagram(key)}`
         + `<span class="outs"><span class="out good"><i>✓</i><em>Open</em><b>${c.open}</b></span>`
