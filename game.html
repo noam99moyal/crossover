@@ -447,19 +447,19 @@
           <li>When you have the ball, play a shot face up. The other player can answer with a card that stops it, or let it go.</li>
           <li><strong>Open shot:</strong> Drive and Mid-range score 2. A Three scores 3.</li>
           <li><strong>Stopped:</strong> no points. A stopped Three is a long rebound, so they score 2 on the fast break.</li>
-          <li>Block stops a Drive. Contest stops a Mid-range. Close Out stops a Three.</li>
+          <li>Charge stops a Drive. Contest stops a Mid-range. Close Out stops a Three.</li>
           <li>After every shot, both players draw back up to 5 cards (6 if you're behind), and the ball goes to the other player, scored or not.</li>
           <li>No shot in your hand? You get a new hand.</li>
           <li>You start with the ball and the CPU starts with 1 point. First to 21 wins.</li>
         </ul>
 
         <h3>Special cards</h3>
-        <p>Gold shots can only be stopped by a Charge. The other specials are white. A play is never longer than three cards: shot, answer, Crossover.</p>
+        <p>Gold shots can only be stopped by a Block. The other specials are white. A play is never longer than three cards: shot, answer, Crossover.</p>
         <dl>
-          <dt>Slam Dunk <span>2 in the deck</span></dt><dd>A gold shot worth 2. Only a Charge stops it.</dd>
-          <dt>Buzzer Beater <span>1 in the deck</span></dt><dd>A gold shot worth 3. Only a Charge stops it. It's not a Three, so stopping it gives no fast break.</dd>
-          <dt>Crossover <span>offense, 2 in the deck</span></dt><dd>After they answer your shot, their card misses and your shot scores. It beats any answer.</dd>
-          <dt>Charge <span>defense, 2 in the deck</span></dt><dd>Stops any shot, even gold.</dd>
+          <dt>Slam Dunk <span>2 in the deck</span></dt><dd>A gold shot worth 2. Only a Block stops it.</dd>
+          <dt>Buzzer Beater <span>1 in the deck</span></dt><dd>A gold shot worth 3. Only a Block stops it. It's not a Three, so stopping it gives no fast break.</dd>
+          <dt>Crossover <span>offense, 2 in the deck</span></dt><dd>Play it after they answer your shot: your shot scores anyway, full points. It beats any answer.</dd>
+          <dt>Block <span>defense, 2 in the deck</span></dt><dd>Stops any shot, even gold shots.</dd>
           <dt>Steal <span>defense, 2 in the deck</span></dt><dd>Stops a Drive or Mid-range, and you score 2.</dd>
           <dt>Foul <span>defense, 2 in the deck</span></dt><dd>Can't stop it? Their shot scores just 1 point. Works on gold shots too.</dd>
         </dl>
@@ -491,21 +491,21 @@
   const SHOTS = ['drive', 'mid', 'three', 'dunk', 'buzzer'];
   // The 41-card deck. Face text is the agreed card wording.
   const CARDS = {
-    drive:     { kind: 'shot', name: 'Drive', pts: 2, count: 6, open: '2 points', stopped: 'no points', by: 'Block' },
+    drive:     { kind: 'shot', name: 'Drive', pts: 2, count: 6, open: '2 points', stopped: 'no points', by: 'Charge' },
     mid:       { kind: 'shot', name: 'Mid-range', pts: 2, count: 6, open: '2 points', stopped: 'no points', by: 'Contest' },
     three:     { kind: 'shot', name: 'Three', pts: 3, count: 6, open: '3 points', stopped: 'they score 2', by: 'Close Out' },
-    block:     { kind: 'answer', name: 'Block', count: 4, stops: ['drive'], rule: 'Stops a Drive' },
+    charge:    { kind: 'answer', name: 'Charge', count: 4, stops: ['drive'], rule: 'Stops a Drive' },
     contest:   { kind: 'answer', name: 'Contest', count: 4, stops: ['mid'], rule: 'Stops a Mid-range' },
     closeout:  { kind: 'answer', name: 'Close Out', count: 4, stops: ['three'], rule: 'Stops a Three' },
-    dunk:      { kind: 'gold', name: 'Slam Dunk', pts: 2, count: 2, when: 'Offense, played as your shot', rule: 'Only a Charge stops it' },
-    buzzer:    { kind: 'gold', name: 'Buzzer Beater', pts: 3, count: 1, when: 'Offense, played as your shot', rule: 'Only a Charge stops it' },
-    crossover: { kind: 'counter', name: 'Crossover', count: 2, when: 'Offense, after they answer', rule: 'Their card misses → your shot scores' },
-    charge:    { kind: 'special', name: 'Charge', count: 2, stops: SHOTS, when: 'Defense, as your answer', rule: 'Stops any shot, even gold' },
+    dunk:      { kind: 'gold', name: 'Slam Dunk', pts: 2, count: 2, when: 'Offense, played as your shot', rule: 'Only a Block stops it' },
+    buzzer:    { kind: 'gold', name: 'Buzzer Beater', pts: 3, count: 1, when: 'Offense, played as your shot', rule: 'Only a Block stops it' },
+    crossover: { kind: 'counter', name: 'Crossover', count: 2, when: 'Offense, after they answer', rule: 'If they answer your shot → It scores anyway' },
+    block:     { kind: 'special', name: 'Block', count: 2, stops: SHOTS, when: 'Defense, as your answer', rule: 'Stops any shot, even gold shots' },
     steal:     { kind: 'special', name: 'Steal', count: 2, stops: ['drive', 'mid'], when: 'Defense, as your answer', rule: 'Stops a Drive or Mid-range → you score 2' },
     foul:      { kind: 'special', name: 'Foul', count: 2, stops: SHOTS, when: 'Defense, as your answer', rule: "Can't stop it? Their shot scores just 1 point" },
   };
   // Hand order: shots, gold shots, answers, then the white specials.
-  const ORDER = ['drive', 'mid', 'three', 'dunk', 'buzzer', 'block', 'contest', 'closeout', 'steal', 'charge', 'foul', 'crossover'];
+  const ORDER = ['drive', 'mid', 'three', 'dunk', 'buzzer', 'charge', 'contest', 'closeout', 'steal', 'block', 'foul', 'crossover'];
   const isShot = (k) => SHOTS.includes(k);
   const canAnswer = (a, shot) => !!(CARDS[a].stops && CARDS[a].stops.includes(shot));
   // Where each shot is taken on the court strip (x%, y%), and which spot label it lights up.
@@ -513,7 +513,7 @@
   const ZONE = { three: 'three', mid: 'mid', drive: 'drive', dunk: 'drive', buzzer: 'three' };
   const RIM = [93, 50];
   const OPEN_HEAD = { drive: 'Layup!', mid: 'Swish!', three: 'Three!', dunk: 'Slam dunk!', buzzer: 'Buzzer beater!' };
-  const STOP_HEAD = { block: 'Blocked!', contest: 'Contested!', closeout: 'Closed out!', charge: 'Charge!' };
+  const STOP_HEAD = { charge: 'Charge!', contest: 'Contested!', closeout: 'Closed out!', block: 'Blocked!' };
 
   const BALL_ICON = '<svg class="ico-ball" aria-hidden="true"><use href="#bball"></use></svg>';
   const SHIELD_ICON = '<svg class="ico-shield" viewBox="0 0 22 26" aria-hidden="true"><path d="M11 1l10 3.6v8c0 6.2-4.2 10.6-10 12.4C5.2 23.2 1 18.8 1 12.6v-8L11 1z"></path></svg>';
@@ -583,10 +583,10 @@
     }
     return best;
   }
-  // Always answers when it can: a Steal if it fits, then the matching card, then a Charge, then a Foul.
+  // Always answers when it can: a Steal if it fits, then the matching card, then a Block, then a Foul.
   function cpuAnswer(shot) {
-    const basic = { drive: 'block', mid: 'contest', three: 'closeout' }[shot];
-    const prefs = ['steal', basic, 'charge', 'foul'].filter((a) => a && canAnswer(a, shot));
+    const basic = { drive: 'charge', mid: 'contest', three: 'closeout' }[shot];
+    const prefs = ['steal', basic, 'block', 'foul'].filter((a) => a && canAnswer(a, shot));
     for (const a of prefs) { const c = find('cpu', (x) => x.key === a); if (c) return c; }
     return null;
   }
@@ -609,7 +609,7 @@
     const scores = (w, n) => `${NAME[w]} ${verb(w, 'score')} ${n}.`;
     switch (r.type) {
       case 'open': return { head: OPEN_HEAD[shot], detail: scores(off, r.off), log: `${played} ${answered} ${scores(off, r.off)}`, tone: off };
-      case 'crossed': return { head: 'Crossover!', detail: `The ${CARDS[ans].name} missed. ${scores(off, r.off)}`, log: `${played} ${answered} The Crossover beat it. ${scores(off, r.off)}`, tone: off };
+      case 'crossed': return { head: 'Crossover!', detail: `It beat the ${CARDS[ans].name}. ${scores(off, r.off)}`, log: `${played} ${answered} The Crossover beat it. ${scores(off, r.off)}`, tone: off };
       case 'foul': return { head: 'Foul', detail: `The ${CARDS[shot].name} scores just 1.`, log: `${played} ${answered} ${scores(off, 1)}`, tone: off };
       case 'steal': return { head: 'Steal!', detail: `${NAME[def]} ${verb(def, 'steal')} it and ${verb(def, 'score')} 2.`, log: `${played} ${answered} ${scores(def, 2)}`, tone: def };
       case 'fastbreak': return { head: STOP_HEAD[ans], detail: `Stopped. ${NAME[def]} ${verb(def, 'score')} 2 on the fast break.`, log: `${played} ${answered} Fast break: ${scores(def, 2)}`, tone: def };
@@ -761,7 +761,7 @@
   }
 
   function stopList(shot) {
-    const names = ['block', 'contest', 'closeout', 'steal', 'charge'].filter((a) => canAnswer(a, shot)).map((a) => CARDS[a].name);
+    const names = ['charge', 'contest', 'closeout', 'steal', 'block'].filter((a) => canAnswer(a, shot)).map((a) => CARDS[a].name);
     return names.length > 1 ? `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}` : names[0];
   }
 
