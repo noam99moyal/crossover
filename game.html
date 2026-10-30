@@ -211,6 +211,9 @@
   .face .rule { font: 700 14px/1.15 var(--ui); margin-top: auto; }
   /* White cards have no diagram, so the rule sits right under the timing line instead of leaving a gap. */
   .face.paper .rule { margin-top: 3px; }
+  /* Text before an arrow is its own line. Cards wide enough keep it on one line by shrinking it a touch; phone-sized cards let it wrap. */
+  .face .rule .l1 { display: block; }
+  @container (min-width: 115px) { .face .rule .l1 { white-space: nowrap; font-size: min(1em, 10.3cqi); } }
   .face .dia { width: 100%; height: 40px; }
   .nw { white-space: nowrap; }
   .face.flip { animation: flip 0.38s ease-out; }
@@ -713,12 +716,15 @@
   const faceClass = (key) => ({ gold: ' gold', counter: ' paper', special: ' paper' })[CARDS[key].kind] || '';
   // Card names never break across lines on narrow cards ("Mid-" / "range").
   const keep = (t) => t.replace(/Mid-range|Close Out|Slam Dunk|Buzzer Beater|Pump Fake|gold shots/g, '<span class="nw">$&</span>');
+  // The arrow always starts the second line: "Stops a Drive or Mid-range" / "→ you score 2".
+  const arrow = (t) => t.replace(/^(.*?) → (.*)$/, '<span class="l1">$1</span>→ $2');
   function faceInner(key) {
     const c = { ...CARDS[key] };
-    for (const f of ['rule', 'by']) if (c[f]) c[f] = keep(c[f]);
+    if (c.kind === 'shot') c.rule = `Stopped by ${c.by}${c.then ? ` → ${c.then}` : ''}`;
+    if (c.rule) c.rule = arrow(keep(c.rule));
     if (c.kind === 'shot') {
       return `<span class="head"><span class="name">${c.name}</span><span class="pts">${c.pts}</span></span>${diagram(key)}`
-        + `<span class="rule">Stopped by ${c.by}${c.then ? ` → ${c.then}` : ''}</span>`;
+        + `<span class="rule">${c.rule}</span>`;
     }
     if (c.kind === 'answer') return `<span class="head"><span class="name">${c.name}</span>${SHIELD_ICON}</span>${diagram(key)}<span class="rule">${c.rule}</span>`;
     if (c.kind === 'gold') return `<span class="head"><span class="name">${c.name}</span><span class="pts">${c.pts}</span></span><span class="when">${c.when}</span>${diagram(key)}<span class="rule">${c.rule}</span>`;
