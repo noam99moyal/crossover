@@ -454,11 +454,11 @@
         </ul>
 
         <h3>Special cards</h3>
-        <p>Gold shots can only be stopped by a Block. The other specials are white. A play is never longer than three cards: shot, answer, Crossover.</p>
+        <p>Gold shots can only be stopped by a Block. The other specials are white. A play is never longer than three cards: shot, answer, Pump Fake.</p>
         <dl>
           <dt>Slam Dunk <span>2 in the deck</span></dt><dd>A gold shot worth 2. Only a Block stops it.</dd>
           <dt>Buzzer Beater <span>1 in the deck</span></dt><dd>A gold shot worth 3. Only a Block stops it. It's not a Three, so stopping it gives no fast break.</dd>
-          <dt>Crossover <span>offense, 2 in the deck</span></dt><dd>Play it after they answer your shot: your shot scores anyway, full points. It beats any answer.</dd>
+          <dt>Pump Fake <span>offense, 2 in the deck</span></dt><dd>Play it after they answer your shot: your shot scores anyway, full points. It beats any answer.</dd>
           <dt>Block <span>defense, 2 in the deck</span></dt><dd>Stops any shot, even gold shots.</dd>
           <dt>Steal <span>defense, 2 in the deck</span></dt><dd>Stops a Drive or Mid-range, and you score 2.</dd>
           <dt>Foul <span>defense, 2 in the deck</span></dt><dd>Can't stop it? Their shot scores just 1 point. Works on gold shots too.</dd>
@@ -486,7 +486,7 @@
   const verb = (who, base) => (who === 'you' ? base : base + 's');
   const TARGET = 21;
   const HAND = 5;
-  const RULES_VERSION = 1;
+  const RULES_VERSION = 2;
 
   const SHOTS = ['drive', 'mid', 'three', 'dunk', 'buzzer'];
   // The 41-card deck. Face text is the agreed card wording.
@@ -499,13 +499,13 @@
     closeout:  { kind: 'answer', name: 'Close Out', count: 4, stops: ['three'], rule: 'Stops a Three' },
     dunk:      { kind: 'gold', name: 'Slam Dunk', pts: 2, count: 2, when: 'Offense, played as your shot', rule: 'Only a Block stops it' },
     buzzer:    { kind: 'gold', name: 'Buzzer Beater', pts: 3, count: 1, when: 'Offense, played as your shot', rule: 'Only a Block stops it' },
-    crossover: { kind: 'counter', name: 'Crossover', count: 2, when: 'Offense, after they answer', rule: 'If they answer your shot → It scores anyway' },
+    pumpfake:  { kind: 'counter', name: 'Pump Fake', count: 2, when: 'Offense, after they answer', rule: 'If they answer your shot → It scores anyway' },
     block:     { kind: 'special', name: 'Block', count: 2, stops: SHOTS, when: 'Defense, as your answer', rule: 'Stops any shot, even gold shots' },
     steal:     { kind: 'special', name: 'Steal', count: 2, stops: ['drive', 'mid'], when: 'Defense, as your answer', rule: 'Stops a Drive or Mid-range → you score 2' },
     foul:      { kind: 'special', name: 'Foul', count: 2, stops: SHOTS, when: 'Defense, as your answer', rule: "Can't stop it? Their shot scores just 1 point" },
   };
   // Hand order: shots, gold shots, answers, then the white specials.
-  const ORDER = ['drive', 'mid', 'three', 'dunk', 'buzzer', 'charge', 'contest', 'closeout', 'steal', 'block', 'foul', 'crossover'];
+  const ORDER = ['drive', 'mid', 'three', 'dunk', 'buzzer', 'charge', 'contest', 'closeout', 'steal', 'block', 'foul', 'pumpfake'];
   const isShot = (k) => SHOTS.includes(k);
   const canAnswer = (a, shot) => !!(CARDS[a].stops && CARDS[a].stops.includes(shot));
   // Where each shot is taken on the court strip (x%, y%), and which spot label it lights up.
@@ -574,11 +574,11 @@
       for (let i = 0; i < k; i++) none *= Math.max(0, pool - good - i) / Math.max(1, pool - i);
       return 1 - none;
     };
-    const crossover = !!find('cpu', (c) => c.key === 'crossover');
+    const fake = !!find('cpu', (c) => c.key === 'pumpfake');
     let best = shots[0], bestEv = -Infinity;
     for (const c of shots) {
       const p = CARDS[c.key].pts, q = pStopped(c.key);
-      const ev = crossover ? p : p * (1 - q) - (c.key === 'three' ? 2 * q : 0);
+      const ev = fake ? p : p * (1 - q) - (c.key === 'three' ? 2 * q : 0);
       if (ev > bestEv) { bestEv = ev; best = c; }
     }
     return best;
@@ -609,7 +609,7 @@
     const scores = (w, n) => `${NAME[w]} ${verb(w, 'score')} ${n}.`;
     switch (r.type) {
       case 'open': return { head: OPEN_HEAD[shot], detail: scores(off, r.off), log: `${played} ${answered} ${scores(off, r.off)}`, tone: off };
-      case 'crossed': return { head: 'Crossover!', detail: `It beat the ${CARDS[ans].name}. ${scores(off, r.off)}`, log: `${played} ${answered} The Crossover beat it. ${scores(off, r.off)}`, tone: off };
+      case 'crossed': return { head: 'Pump Fake!', detail: `It beat the ${CARDS[ans].name}. ${scores(off, r.off)}`, log: `${played} ${answered} The Pump Fake beat it. ${scores(off, r.off)}`, tone: off };
       case 'foul': return { head: 'Foul', detail: `The ${CARDS[shot].name} scores just 1.`, log: `${played} ${answered} ${scores(off, 1)}`, tone: off };
       case 'steal': return { head: 'Steal!', detail: `${NAME[def]} ${verb(def, 'steal')} it and ${verb(def, 'score')} 2.`, log: `${played} ${answered} ${scores(def, 2)}`, tone: def };
       case 'fastbreak': return { head: STOP_HEAD[ans], detail: `Stopped. ${NAME[def]} ${verb(def, 'score')} 2 on the fast break.`, log: `${played} ${answered} Fast break: ${scores(def, 2)}`, tone: def };
@@ -652,14 +652,14 @@
       const ans = cpuAnswer(S.cur.shot.key);
       S.flip = true;
       if (ans) S.cur.ans = take('cpu', ans);
-      if (ans && find('you', (c) => c.key === 'crossover')) { S.phase = 'counter'; render(); }
+      if (ans && find('you', (c) => c.key === 'pumpfake')) { S.phase = 'counter'; render(); }
       else finish();
     }, 700);
   }
 
   function counter(use) {
     if (S.phase !== 'counter') return;
-    if (use) S.cur.cross = take('you', find('you', (c) => c.key === 'crossover'));
+    if (use) S.cur.cross = take('you', find('you', (c) => c.key === 'pumpfake'));
     finish();
   }
 
@@ -669,7 +669,7 @@
       const card = find('you', (c) => c.id === S.sel);
       if (!card || !canAnswer(card.key, S.cur.shot.key)) return;
       S.cur.ans = take('you', card);
-      const x = find('cpu', (c) => c.key === 'crossover');
+      const x = find('cpu', (c) => c.key === 'pumpfake');
       if (x) S.cur.cross = take('cpu', x);
     }
     S.sel = null;
@@ -728,7 +728,7 @@
 
   const faceClass = (key) => ({ gold: ' gold', counter: ' paper', special: ' paper' })[CARDS[key].kind] || '';
   // Card names never break across lines on narrow cards ("Mid-" / "range").
-  const keep = (t) => t.replace(/Mid-range|Close Out|Slam Dunk|Buzzer Beater/g, '<span class="nw">$&</span>');
+  const keep = (t) => t.replace(/Mid-range|Close Out|Slam Dunk|Buzzer Beater|Pump Fake/g, '<span class="nw">$&</span>');
   function faceInner(key) {
     const c = { ...CARDS[key] };
     for (const f of ['rule', 'by']) if (c[f]) c[f] = keep(c[f]);
@@ -806,9 +806,9 @@
     let you, cpu, m = { text: 'vs' };
     if (L) {
       const def = other(L.off);
-      const shooter = face(L.shot, L.off) + (L.cross ? tag('Crossover', 'worked', 'Beat their card') : '');
+      const shooter = face(L.shot, L.off) + (L.cross ? tag('Pump Fake', 'worked', 'Beat their card') : '');
       const answerer = L.ans
-        ? face(L.ans, def, (L.cross ? ' beaten' : '') + (def === 'cpu' && S.flip ? ' flip' : '')) + (L.cross ? tag('Missed', 'missed') : '')
+        ? face(L.ans, def, (L.cross ? ' beaten' : '') + (def === 'cpu' && S.flip ? ' flip' : '')) + (L.cross ? tag('Fooled', 'missed') : '')
         : empty(def === 'you' ? 'You let it go' : 'No answer');
       [you, cpu] = L.off === 'you' ? [shooter, answerer] : [answerer, shooter];
       m = L.r.off > 0 ? { text: `+${L.r.off}`, tone: L.off, big: true } : { text: 'Stopped', tone: def };
@@ -838,7 +838,7 @@
     // The line under the cards: the last result, or what to do right now.
     let R;
     if (S.phase === 'answer') R = { head: `CPU played ${CARDS[S.cur.shot.key].name}`, detail: `${stopList(S.cur.shot.key)} stops it. A Foul makes it 1 point.`, tone: 'cpu' };
-    else if (S.phase === 'counter') R = { head: 'They answered', detail: `CPU played ${CARDS[S.cur.ans.key].name}. Your Crossover can beat it.`, tone: 'cpu' };
+    else if (S.phase === 'counter') R = { head: 'They answered', detail: `CPU played ${CARDS[S.cur.ans.key].name}. Your Pump Fake can beat it.`, tone: 'cpu' };
     else if (S.phase === 'busy') R = { head: "Shot's up", detail: 'The CPU is picking its answer.', tone: 'you' };
     else R = S.last || { head: 'Tip-off', detail: 'You have the ball. Pick a shot, then shoot.', tone: 'you', n: 0 };
     const res = $('#result');
@@ -852,7 +852,7 @@
   function playable(key) {
     if (S.phase === 'shoot') return isShot(key);
     if (S.phase === 'answer') return canAnswer(key, S.cur.shot.key);
-    if (S.phase === 'counter') return key === 'crossover';
+    if (S.phase === 'counter') return key === 'pumpfake';
     return false;
   }
 
@@ -868,7 +868,7 @@
     const st = {
       shoot: ['Your ball', 'Pick a shot. The CPU will try to stop it.'],
       busy: ['Your ball', 'The CPU is picking its answer.'],
-      counter: ['Your ball', 'They stopped it. Play your Crossover to score anyway, or let it stand.'],
+      counter: ['Your ball', 'They stopped it. Play your Pump Fake to score anyway, or let it stand.'],
       next: ["CPU's ball next", 'Press Next to see the CPU\'s shot.'],
       answer: ["CPU's ball", 'Stop their shot with a card that matches it, or let it go.'],
       over: ['Final', ''],
@@ -886,7 +886,7 @@
     $('#handHint').textContent = {
       shoot: 'Your shots are lit up',
       answer: lit ? 'Cards that stop it are lit up' : 'Nothing in your hand stops it',
-      counter: 'Your Crossover is lit up',
+      counter: 'Your Pump Fake is lit up',
     }[S.phase] || '';
     $('#hand').innerHTML = hand.map((c) => {
       const on = S.sel === c.id;
@@ -899,7 +899,7 @@
     const btn = {
       shoot: ['Shoot', !S.sel, null],
       busy: ['Shoot', true, null],
-      counter: ['Play Crossover', false, 'Let it stand'],
+      counter: ['Play Pump Fake', false, 'Let it stand'],
       answer: ['Answer', !S.sel, 'Let it go'],
       next: ["Next: CPU's ball", false, null],
       over: ['Shoot', true, null],
