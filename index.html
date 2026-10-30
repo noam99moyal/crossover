@@ -219,27 +219,10 @@
   .face .when { font: 500 12px/1.15 var(--ui); color: var(--chalk-dim); }
   .face.gold .when, .face.paper .when { color: var(--ink-dim); }
   .face .rule { font: 700 14px/1.15 var(--ui); margin-top: auto; }
+  /* White cards have no diagram, so the rule sits right under the timing line instead of leaving a gap. */
+  .face.paper .rule { margin-top: 3px; }
   .face .dia { width: 100%; height: 40px; }
-  .face .by { font: 500 12px/1.1 var(--ui); color: var(--chalk-dim); }
   .nw { white-space: nowrap; }
-  .face .outs { display: grid; gap: 5px; margin-top: auto; }
-  /* Narrow cards: each outcome is a small label over an icon and the result. Wide cards: one line each, "✓ Open: 2 points". */
-  .out {
-    display: grid; grid-template-columns: 12px minmax(0, 1fr); grid-template-areas: "label label" "icon result";
-    gap: 1px 4px; align-items: baseline;
-  }
-  .out + .out { padding-top: 5px; border-top: 1px solid var(--line); }
-  .out em { grid-area: label; font: normal 500 12px/1.1 var(--ui); color: var(--chalk-dim); }
-  .out i { grid-area: icon; font: normal 700 13px/1 var(--ui); }
-  .out b { grid-area: result; font: 700 14px/1.1 var(--ui); }
-  .out.good i, .out.good b { color: var(--team); }
-  .out.bad i { color: var(--chalk-dim); }
-  @container (min-width: 132px) {
-    .out { grid-template-columns: 12px auto minmax(0, 1fr); grid-template-areas: "icon label result"; column-gap: 4px; }
-    .out + .out { padding-top: 0; border-top: 0; }
-    .out em::after { content: ':'; }
-    .out b { font-size: 13.5px; }
-  }
   .face.flip { animation: flip 0.38s ease-out; }
   @keyframes flip { from { transform: rotateY(90deg); } to { transform: rotateY(0deg); } }
   .face.beaten { opacity: 0.5; }
@@ -457,7 +440,7 @@
         <ul>
           <li>When you have the ball, play a shot face up. The other player can answer with a card that stops it, or let it go.</li>
           <li><strong>Open shot:</strong> Drive and Mid-range score 2. A Three scores 3.</li>
-          <li><strong>Stopped:</strong> no points. A stopped Three is a long rebound, so they score 2 on the fast break.</li>
+          <li><strong>Stopped:</strong> no points. A Three stopped by a Close Out is a long rebound, so they score 2 on the fast break.</li>
           <li>Charge stops a Drive. Contest stops a Mid-range. Close Out stops a Three.</li>
           <li>After every shot, both players draw back up to 5 cards (6 if you're behind), and the ball goes to the other player, scored or not.</li>
           <li>No shot in your hand? You get a new hand.</li>
@@ -468,7 +451,7 @@
         <p>Gold shots can only be stopped by a Block. The other specials are white. A play is never longer than three cards: shot, answer, Pump Fake.</p>
         <dl>
           <dt>Slam Dunk <span>3 in the deck</span></dt><dd>A gold shot worth 2. Only a Block stops it. A Foul makes it 1 point.</dd>
-          <dt>Buzzer Beater <span>1 in the deck</span></dt><dd>A gold shot worth 3. Only a Block stops it. A Foul makes it 1 point. It's not a Three, so stopping it gives no fast break.</dd>
+          <dt>Buzzer Beater <span>1 in the deck</span></dt><dd>A gold shot worth 3. Only a Block stops it. A Foul makes it 1 point.</dd>
           <dt>Pump Fake <span>offense, 3 in the deck</span></dt><dd>Play it after they answer your shot: your shot scores anyway, full points. It beats any answer.</dd>
           <dt>Block <span>defense, 3 in the deck</span></dt><dd>Stops any shot, even gold shots.</dd>
           <dt>Steal <span>defense, 3 in the deck</span></dt><dd>Stops a Drive or Mid-range, and you score 2.</dd>
@@ -497,23 +480,23 @@
   const verb = (who, base) => (who === 'you' ? base : base + 's');
   const TARGET = 21;
   const HAND = 5;
-  const RULES_VERSION = 3;
+  const RULES_VERSION = 4;
 
   const SHOTS = ['drive', 'mid', 'three', 'dunk', 'buzzer'];
   // The 54-card deck, the size of a normal deck of cards. Face text is the agreed card wording.
   const CARDS = {
-    drive:     { kind: 'shot', name: 'Drive', pts: 2, count: 8, open: '2 points', stopped: 'no points', by: 'Charge' },
-    mid:       { kind: 'shot', name: 'Mid-range', pts: 2, count: 8, open: '2 points', stopped: 'no points', by: 'Contest' },
-    three:     { kind: 'shot', name: 'Three', pts: 3, count: 8, open: '3 points', stopped: 'they score 2', by: 'Close Out' },
+    drive:     { kind: 'shot', name: 'Drive', pts: 2, count: 8, by: 'Charge' },
+    mid:       { kind: 'shot', name: 'Mid-range', pts: 2, count: 8, by: 'Contest' },
+    three:     { kind: 'shot', name: 'Three', pts: 3, count: 8, by: 'Close Out', then: 'they score 2' },
     charge:    { kind: 'answer', name: 'Charge', count: 5, stops: ['drive'], rule: 'Stops a Drive' },
     contest:   { kind: 'answer', name: 'Contest', count: 5, stops: ['mid'], rule: 'Stops a Mid-range' },
     closeout:  { kind: 'answer', name: 'Close Out', count: 5, stops: ['three'], rule: 'Stops a Three' },
     dunk:      { kind: 'gold', name: 'Slam Dunk', pts: 2, count: 3, when: 'Offense, played as your shot', rule: 'Only a Block stops it' },
     buzzer:    { kind: 'gold', name: 'Buzzer Beater', pts: 3, count: 1, when: 'Offense, played as your shot', rule: 'Only a Block stops it' },
-    pumpfake:  { kind: 'counter', name: 'Pump Fake', count: 3, when: 'Offense, after they answer', rule: 'If they answer your shot → It scores anyway' },
+    pumpfake:  { kind: 'counter', name: 'Pump Fake', count: 3, when: 'Offense, after they answer', rule: 'Your shot scores anyway' },
     block:     { kind: 'special', name: 'Block', count: 3, stops: SHOTS, when: 'Defense, as your answer', rule: 'Stops any shot, even gold shots' },
     steal:     { kind: 'special', name: 'Steal', count: 3, stops: ['drive', 'mid'], when: 'Defense, as your answer', rule: 'Stops a Drive or Mid-range → you score 2' },
-    foul:      { kind: 'special', name: 'Foul', count: 2, stops: SHOTS, when: 'Defense, as your answer', rule: 'Any shot, even gold shots → It scores just 1 point' },
+    foul:      { kind: 'special', name: 'Foul', count: 2, stops: SHOTS, when: 'Defense, as your answer', rule: 'Any shot, even gold shots → it scores just 1 point' },
   };
   // Hand order: shots, gold shots, answers, then the white specials.
   const ORDER = ['drive', 'mid', 'three', 'dunk', 'buzzer', 'charge', 'contest', 'closeout', 'steal', 'block', 'foul', 'pumpfake'];
@@ -578,9 +561,10 @@
     for (const k of S.discard) unseen[k]--;
     const pool = Object.values(unseen).reduce((a, b) => a + Math.max(0, b), 0);
     const k = S.hands.you.length;
-    const pStopped = (shot) => {
+    // Chance your hand holds at least one of these cards.
+    const pHolds = (keys) => {
       let good = 0;
-      for (const a of Object.keys(CARDS)) if (canAnswer(a, shot)) good += Math.max(0, unseen[a]);
+      for (const a of keys) good += Math.max(0, unseen[a]);
       let none = 1;
       for (let i = 0; i < k; i++) none *= Math.max(0, pool - good - i) / Math.max(1, pool - i);
       return 1 - none;
@@ -588,8 +572,8 @@
     const fake = !!find('cpu', (c) => c.key === 'pumpfake');
     let best = shots[0], bestEv = -Infinity;
     for (const c of shots) {
-      const p = CARDS[c.key].pts, q = pStopped(c.key);
-      const ev = fake ? p : p * (1 - q) - (c.key === 'three' ? 2 * q : 0);
+      const p = CARDS[c.key].pts, q = pHolds(Object.keys(CARDS).filter((a) => canAnswer(a, c.key)));
+      const ev = fake ? p : p * (1 - q) - (c.key === 'three' ? 2 * pHolds(['closeout']) : 0);
       if (ev > bestEv) { bestEv = ev; best = c; }
     }
     return best;
@@ -609,7 +593,7 @@
     if (crossed) return { type: 'crossed', off: pts, def: 0 };
     if (ans === 'foul') return { type: 'foul', off: 1, def: 0 };
     if (ans === 'steal') return { type: 'steal', off: 0, def: 2 };
-    if (shot === 'three') return { type: 'fastbreak', off: 0, def: 2 };
+    if (ans === 'closeout') return { type: 'fastbreak', off: 0, def: 2 };
     return { type: 'stopped', off: 0, def: 0 };
   }
 
@@ -739,15 +723,13 @@
 
   const faceClass = (key) => ({ gold: ' gold', counter: ' paper', special: ' paper' })[CARDS[key].kind] || '';
   // Card names never break across lines on narrow cards ("Mid-" / "range").
-  const keep = (t) => t.replace(/Mid-range|Close Out|Slam Dunk|Buzzer Beater|Pump Fake/g, '<span class="nw">$&</span>');
+  const keep = (t) => t.replace(/Mid-range|Close Out|Slam Dunk|Buzzer Beater|Pump Fake|gold shots/g, '<span class="nw">$&</span>');
   function faceInner(key) {
     const c = { ...CARDS[key] };
     for (const f of ['rule', 'by']) if (c[f]) c[f] = keep(c[f]);
     if (c.kind === 'shot') {
       return `<span class="head"><span class="name">${c.name}</span><span class="pts">${c.pts}</span></span>${diagram(key)}`
-        + `<span class="outs"><span class="out good"><i>✓</i><em>Open</em><b>${c.open}</b></span>`
-        + `<span class="out bad"><i>✕</i><em>Stopped</em><b>${c.stopped}</b></span></span>`
-        + `<span class="by">Stopped by ${c.by}</span>`;
+        + `<span class="rule">Stopped by ${c.by}${c.then ? ` → ${c.then}` : ''}</span>`;
     }
     if (c.kind === 'answer') return `<span class="head"><span class="name">${c.name}</span>${SHIELD_ICON}</span>${diagram(key)}<span class="rule">${c.rule}</span>`;
     if (c.kind === 'gold') return `<span class="head"><span class="name">${c.name}</span><span class="pts">${c.pts}</span></span><span class="when">${c.when}</span>${diagram(key)}<span class="rule">${c.rule}</span>`;
