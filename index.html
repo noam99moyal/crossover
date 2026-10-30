@@ -472,7 +472,7 @@
           <dt>Pump Fake <span>offense, 3 in the deck</span></dt><dd>Play it after they answer your shot: your shot scores anyway, full points. It beats any answer.</dd>
           <dt>Block <span>defense, 3 in the deck</span></dt><dd>Stops any shot, even gold shots.</dd>
           <dt>Steal <span>defense, 3 in the deck</span></dt><dd>Stops a Drive or Mid-range, and you score 2.</dd>
-          <dt>Foul <span>defense, 2 in the deck</span></dt><dd>Can't stop it? Their shot scores just 1 point. Works on gold shots too.</dd>
+          <dt>Foul <span>defense, 2 in the deck</span></dt><dd>Play it on any shot, even gold shots: it scores just 1 point.</dd>
         </dl>
 
         <h3>The computer</h3>
@@ -513,7 +513,7 @@
     pumpfake:  { kind: 'counter', name: 'Pump Fake', count: 3, when: 'Offense, after they answer', rule: 'If they answer your shot → It scores anyway' },
     block:     { kind: 'special', name: 'Block', count: 3, stops: SHOTS, when: 'Defense, as your answer', rule: 'Stops any shot, even gold shots' },
     steal:     { kind: 'special', name: 'Steal', count: 3, stops: ['drive', 'mid'], when: 'Defense, as your answer', rule: 'Stops a Drive or Mid-range → you score 2' },
-    foul:      { kind: 'special', name: 'Foul', count: 2, stops: SHOTS, when: 'Defense, as your answer', rule: "Can't stop it? Their shot scores just 1 point" },
+    foul:      { kind: 'special', name: 'Foul', count: 2, stops: SHOTS, when: 'Defense, as your answer', rule: 'Any shot, even gold shots → It scores just 1 point' },
   };
   // Hand order: shots, gold shots, answers, then the white specials.
   const ORDER = ['drive', 'mid', 'three', 'dunk', 'buzzer', 'charge', 'contest', 'closeout', 'steal', 'block', 'foul', 'pumpfake'];
