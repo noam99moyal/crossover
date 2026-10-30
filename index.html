@@ -467,11 +467,11 @@
         <h3>Special cards</h3>
         <p>Gold shots can only be stopped by a Block. The other specials are white. A play is never longer than three cards: shot, answer, Pump Fake.</p>
         <dl>
-          <dt>Slam Dunk <span>2 in the deck</span></dt><dd>A gold shot worth 2. Only a Block stops it.</dd>
+          <dt>Slam Dunk <span>3 in the deck</span></dt><dd>A gold shot worth 2. Only a Block stops it.</dd>
           <dt>Buzzer Beater <span>1 in the deck</span></dt><dd>A gold shot worth 3. Only a Block stops it. It's not a Three, so stopping it gives no fast break.</dd>
-          <dt>Pump Fake <span>offense, 2 in the deck</span></dt><dd>Play it after they answer your shot: your shot scores anyway, full points. It beats any answer.</dd>
-          <dt>Block <span>defense, 2 in the deck</span></dt><dd>Stops any shot, even gold shots.</dd>
-          <dt>Steal <span>defense, 2 in the deck</span></dt><dd>Stops a Drive or Mid-range, and you score 2.</dd>
+          <dt>Pump Fake <span>offense, 3 in the deck</span></dt><dd>Play it after they answer your shot: your shot scores anyway, full points. It beats any answer.</dd>
+          <dt>Block <span>defense, 3 in the deck</span></dt><dd>Stops any shot, even gold shots.</dd>
+          <dt>Steal <span>defense, 3 in the deck</span></dt><dd>Stops a Drive or Mid-range, and you score 2.</dd>
           <dt>Foul <span>defense, 2 in the deck</span></dt><dd>Can't stop it? Their shot scores just 1 point. Works on gold shots too.</dd>
         </dl>
 
@@ -497,22 +497,22 @@
   const verb = (who, base) => (who === 'you' ? base : base + 's');
   const TARGET = 21;
   const HAND = 5;
-  const RULES_VERSION = 2;
+  const RULES_VERSION = 3;
 
   const SHOTS = ['drive', 'mid', 'three', 'dunk', 'buzzer'];
-  // The 41-card deck. Face text is the agreed card wording.
+  // The 54-card deck, the size of a normal deck of cards. Face text is the agreed card wording.
   const CARDS = {
-    drive:     { kind: 'shot', name: 'Drive', pts: 2, count: 6, open: '2 points', stopped: 'no points', by: 'Charge' },
-    mid:       { kind: 'shot', name: 'Mid-range', pts: 2, count: 6, open: '2 points', stopped: 'no points', by: 'Contest' },
-    three:     { kind: 'shot', name: 'Three', pts: 3, count: 6, open: '3 points', stopped: 'they score 2', by: 'Close Out' },
-    charge:    { kind: 'answer', name: 'Charge', count: 4, stops: ['drive'], rule: 'Stops a Drive' },
-    contest:   { kind: 'answer', name: 'Contest', count: 4, stops: ['mid'], rule: 'Stops a Mid-range' },
-    closeout:  { kind: 'answer', name: 'Close Out', count: 4, stops: ['three'], rule: 'Stops a Three' },
-    dunk:      { kind: 'gold', name: 'Slam Dunk', pts: 2, count: 2, when: 'Offense, played as your shot', rule: 'Only a Block stops it' },
+    drive:     { kind: 'shot', name: 'Drive', pts: 2, count: 8, open: '2 points', stopped: 'no points', by: 'Charge' },
+    mid:       { kind: 'shot', name: 'Mid-range', pts: 2, count: 8, open: '2 points', stopped: 'no points', by: 'Contest' },
+    three:     { kind: 'shot', name: 'Three', pts: 3, count: 8, open: '3 points', stopped: 'they score 2', by: 'Close Out' },
+    charge:    { kind: 'answer', name: 'Charge', count: 5, stops: ['drive'], rule: 'Stops a Drive' },
+    contest:   { kind: 'answer', name: 'Contest', count: 5, stops: ['mid'], rule: 'Stops a Mid-range' },
+    closeout:  { kind: 'answer', name: 'Close Out', count: 5, stops: ['three'], rule: 'Stops a Three' },
+    dunk:      { kind: 'gold', name: 'Slam Dunk', pts: 2, count: 3, when: 'Offense, played as your shot', rule: 'Only a Block stops it' },
     buzzer:    { kind: 'gold', name: 'Buzzer Beater', pts: 3, count: 1, when: 'Offense, played as your shot', rule: 'Only a Block stops it' },
-    pumpfake:  { kind: 'counter', name: 'Pump Fake', count: 2, when: 'Offense, after they answer', rule: 'If they answer your shot → It scores anyway' },
-    block:     { kind: 'special', name: 'Block', count: 2, stops: SHOTS, when: 'Defense, as your answer', rule: 'Stops any shot, even gold shots' },
-    steal:     { kind: 'special', name: 'Steal', count: 2, stops: ['drive', 'mid'], when: 'Defense, as your answer', rule: 'Stops a Drive or Mid-range → you score 2' },
+    pumpfake:  { kind: 'counter', name: 'Pump Fake', count: 3, when: 'Offense, after they answer', rule: 'If they answer your shot → It scores anyway' },
+    block:     { kind: 'special', name: 'Block', count: 3, stops: SHOTS, when: 'Defense, as your answer', rule: 'Stops any shot, even gold shots' },
+    steal:     { kind: 'special', name: 'Steal', count: 3, stops: ['drive', 'mid'], when: 'Defense, as your answer', rule: 'Stops a Drive or Mid-range → you score 2' },
     foul:      { kind: 'special', name: 'Foul', count: 2, stops: SHOTS, when: 'Defense, as your answer', rule: "Can't stop it? Their shot scores just 1 point" },
   };
   // Hand order: shots, gold shots, answers, then the white specials.
