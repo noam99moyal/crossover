@@ -282,6 +282,8 @@
   .log li.t-you { --tone: var(--you); }
   .log li.t-cpu { --tone: var(--cpu); }
   .log li.t-you .n, .log li.t-cpu .n { color: var(--tone); }
+  /* The score after the play floats at the right end of the row's last line, so it never takes a line of its own. */
+  .log li .sc { float: right; margin-left: 6px; font: 700 1.1em/1.18 var(--ui); color: var(--chalk); font-variant-numeric: tabular-nums; }
   /* Phones: the text shrinks a little on narrow phones so the longest line still takes two lines. */
   @media (max-width: 899px) {
     .log { padding-right: 0; container-type: inline-size; }
@@ -333,6 +335,12 @@
     .go { font-size: 22px; }
     .over h2 { font-size: 32px; }
     .over p { font-size: 24px; }
+  }
+  /* Under 360px the longest rows have no room left for the score (the scoreboard is right above), and a bit less padding
+     keeps "Still no shot: the ball goes over." on two lines. */
+  @media (max-width: 359px) {
+    .log-box { padding-inline: 12px; }
+    .log li .sc { display: none; }
   }
 
   /* Wide screens: one screen, no scrolling. Comes last so it overrides the phone layout above. */
@@ -607,7 +615,7 @@
       log: [], n: 0,
     };
     refill('you'); refill('cpu');
-    S.log.unshift({ n: 0, head: 'Tip-off', text: 'You get the ball first. The CPU starts with 1 point.', tone: 'you' });
+    S.log.unshift({ n: 0, head: 'Tip-off', text: 'You get the ball first. The CPU starts with 1 point.', tone: 'you', sc: '0–1' });
     startPossession('you');
     render();
   }
@@ -692,7 +700,8 @@
     }
   }
 
-  function addLog(e) { S.log.unshift(e); if (S.log.length > 80) S.log.length = 80; }
+  // Every row keeps the score right after it: you first, like the scoreboard.
+  function addLog(e) { S.log.unshift({ ...e, sc: `${S.score.you}–${S.score.cpu}` }); if (S.log.length > 80) S.log.length = 80; }
 
   // A possession starts. No shot in hand: discard it and draw a new one. Still none: the ball goes over.
   function startPossession(w) {
@@ -969,7 +978,7 @@
     if (btn[2]) alt.textContent = btn[2];
 
     // Play by play
-    $('#log').innerHTML = S.log.map((e) => `<li class="t-${e.tone}"><span class="n">${e.n || '–'}</span><span><b>${e.head}</b>${e.text}</span></li>`).join('');
+    $('#log').innerHTML = S.log.map((e) => `<li class="t-${e.tone}"><span class="n">${e.n || '–'}</span><span><b>${e.head}</b>${e.text}${e.sc ? `<span class="sc">${e.sc}</span>` : ''}</span></li>`).join('');
     fitLog();
 
     // Game over
