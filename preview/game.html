@@ -301,13 +301,13 @@
 
   /* Game over */
   .over {
-    position: fixed; inset: 0; display: grid; place-items: center; z-index: 20;
+    position: fixed; inset: 0; display: grid; grid-template-columns: minmax(0, 1fr); place-items: center; z-index: 20;
     background: rgba(4, 6, 14, 0.8);
     padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
   }
   .over .panel {
     background: var(--board); border: 2px solid var(--tone, var(--chalk)); border-radius: 14px;
-    padding: 26px 24px; display: grid; gap: 12px; text-align: center; width: min(340px, 100%);
+    padding: 26px 24px; display: grid; gap: 12px; text-align: center; width: min(340px, 100%); box-sizing: border-box;
   }
   .over h2 { margin: 0; font: 900 40px/1 var(--display); color: var(--tone, var(--chalk)); }
   .over p { margin: 0; font: 800 28px/1 var(--display); font-variant-numeric: tabular-nums; }
@@ -318,6 +318,11 @@
     .board { padding: 10px; }
     .team { gap: 8px; }
     .team .score { font-size: 38px; }
+    .status strong { font-size: 19px; }
+    .result .head { font-size: 26px; }
+    .go { font-size: 22px; }
+    .over h2 { font-size: 32px; }
+    .over p { font-size: 24px; }
   }
 
   /* Wide screens: one screen, no scrolling. Comes last so it overrides the phone layout above. */
