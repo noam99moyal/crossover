@@ -1,13 +1,14 @@
 """Build the website from game.html.
 
 game.html is the game as published on Claude (no <head>). This wraps it into a full
-index.html for GitHub Pages, and optionally zips that for itch.io:
+index.html for GitHub Pages, and optionally zips the whole site (index.html plus the card images
+in cards/) for Netlify Drop or itch.io:
 
-    python3 build.py                       # writes index.html and preview/index.html
-    python3 build.py ~/Desktop/crossover-itch.zip   # also writes the zip
+    python3 build.py                                   # writes index.html and preview/index.html
+    python3 build.py ~/Desktop/crossover-netlify.zip   # also writes the zip
 
-preview/ is the game played with the finished printed cards (preview/game.html plus the card
-images in preview/cards/). It is built next to the live game but never goes into the itch zip.
+preview/ is a place to try changes before they go live (preview/game.html plus its own copy of
+the card images in preview/cards/). It is built next to the live game but never goes into the zip.
 """
 import sys
 import zipfile
@@ -56,4 +57,6 @@ if len(sys.argv) > 1:
     out = Path(sys.argv[1]).expanduser()
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
         z.write(HERE / "index.html", "index.html")
+        for f in sorted((HERE / "cards").glob("*.webp")):
+            z.write(f, f"cards/{f.name}")
     print(f"wrote {out}")

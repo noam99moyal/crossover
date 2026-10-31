@@ -4,9 +4,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=Big+Shoulders+Display:wght@700;800;900&display=swap">
 <style>
-  /* Layout: same skeleton as Snap Call. One narrow column on phones (scoreboard → court → stage → hand → play-by-play → rules).
-     On wide screens a whole possession fits on one screen: the court runs across the top, the stage and its history sit left, your hand right.
-     Look: night game in an arena. A maple court strip, chalk half-court diagrams on navy cards, gold for gold shots, white for the other specials.
+  /* Card art preview: the same game played with the finished printed cards (images in cards/).
+     Layout: same skeleton as Snap Call. One narrow column on phones (scoreboard → court → stage → hand → play-by-play).
+     On wide screens a whole possession fits on one screen: the court and the stage sit left, your hand right.
+     Look: night game in the arena from the card art. A maple court seen from the sideline under a purple crowd.
      The one loud moment is the stage: the shot and its answer face off and a stamp says whether it went in. */
   :root {
     --arena: #0d1220;
@@ -21,7 +22,9 @@
     --wood-2: #c1834a;
     --court-line: rgba(255, 251, 243, 0.92);
     --you: #ff8a3d;
-    --cpu: #79abff;
+    /* Teal, not blue: blue and red are the card frames for offense and defense. */
+    --cpu: #3ad6c4;
+    --arena-purple: #3b2477;
     --gold: #f6c445;
     --gold-deep: #a36f00;
     --paper: #eef1f6;
@@ -62,6 +65,12 @@
 
   /* Header */
   .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .top-actions { display: flex; gap: 8px; flex: none; }
+  .top-actions .short { display: none; }
+  @media (max-width: 430px) {
+    .top-actions .long { display: none; }
+    .top-actions .short { display: inline; }
+  }
   .brand { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; min-width: 0; }
   .brand h1 { margin: 0; font: 900 30px/1 var(--display); letter-spacing: 0.01em; white-space: nowrap; }
   .chip { font: 600 13px/1 var(--ui); letter-spacing: 0.04em; color: var(--chalk-dim); border: 1px solid var(--line); border-radius: 4px; padding: 4px 6px; white-space: nowrap; }
@@ -100,36 +109,23 @@
   .status strong { font: 700 21px/1.1 var(--ui); letter-spacing: 0.02em; }
   .status span { color: var(--chalk-dim); }
 
-  /* Court: a half court seen from the side, always drawn from the offense's side, attacking the hoop on the right.
-     The three shot spots run left to right: Three, Mid-range, Drive. */
+  /* Court: the arena from the card art, seen from the sideline. The offense always attacks the hoop on the right,
+     and the paint under it takes the offense's color. The drawing is in feet (court 94 × 50, squashed for the camera angle)
+     and keeps its bottom-right corner in view. The same 70 feet of court show at every width: only the size changes. */
   .court {
-    position: relative; height: 84px; border-radius: 8px; overflow: hidden;
-    background:
-      repeating-linear-gradient(180deg, transparent 0 9px, rgba(94, 48, 12, 0.13) 9px 10px),
-      repeating-linear-gradient(90deg, transparent 0 139px, rgba(94, 48, 12, 0.1) 139px 140px),
-      linear-gradient(90deg, var(--wood-2), var(--wood) 70%);
-    box-shadow: inset 0 0 0 2px var(--court-line), 0 10px 26px rgba(0, 0, 0, 0.35);
+    position: relative; aspect-ratio: 2.9; border-radius: 10px; overflow: hidden; background: #1b1240;
+    box-shadow: inset 0 0 0 1px var(--line), 0 10px 26px rgba(0, 0, 0, 0.35);
   }
   .court[data-off="you"] { --offc: var(--you); --defc: var(--cpu); }
   .court[data-off="cpu"] { --offc: var(--cpu); --defc: var(--you); }
-  .court .arc { position: absolute; left: 40%; width: 105%; top: -62%; height: 224%; border: 2px solid var(--court-line); border-radius: 50%; }
-  .court .paint {
-    position: absolute; left: 68%; right: 0; top: 26%; bottom: 26%;
-    background: color-mix(in srgb, var(--offc) 42%, var(--wood-2)); border: 2px solid var(--court-line); border-right: 0;
-    transition: background-color 0.3s;
-  }
-  .court .ft { position: absolute; left: 68%; top: 50%; height: 48%; aspect-ratio: 1; transform: translate(-50%, -50%); border: 2px solid var(--court-line); border-radius: 50%; }
-  .court .backboard { position: absolute; left: 96.6%; top: 34%; bottom: 34%; width: 3px; background: var(--court-line); }
-  .court .rim { position: absolute; left: 93%; top: 50%; width: 16px; height: 16px; transform: translate(-50%, -50%); border: 3px solid var(--rim); border-radius: 50%; transition: box-shadow 0.2s; }
-  .court.in .rim { box-shadow: 0 0 0 4px color-mix(in srgb, var(--offc) 55%, transparent), 0 0 18px var(--offc); }
-  .zl {
-    position: absolute; bottom: 6px; transform: translateX(-50%); white-space: nowrap;
-    font: 700 12px/1 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; color: rgba(54, 26, 6, 0.62);
-    padding: 3px 6px; border-radius: 4px; transition: background-color 0.2s, color 0.2s;
-  }
-  .zl.here { background: var(--board); color: var(--chalk); box-shadow: inset 0 -2px 0 var(--offc); }
+  .court > svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .court .cl { fill: none; stroke: var(--court-line); stroke-width: 1.6; vector-effect: non-scaling-stroke; }
+  .court .paint { fill: color-mix(in srgb, var(--offc) 72%, #8a4a1c); transition: fill 0.3s; }
+  .court .rim { fill: none; stroke: var(--rim); stroke-width: 2.6; vector-effect: non-scaling-stroke; transition: filter 0.2s; }
+  .court.in .rim { filter: drop-shadow(0 0 0.5px var(--offc)) drop-shadow(0 0 1.2px var(--offc)); }
+  .court .net { fill: none; stroke: rgba(255, 255, 255, 0.85); stroke-width: 1; vector-effect: non-scaling-stroke; }
   .ball {
-    position: absolute; left: 5%; top: 50%; width: 24px; height: 24px; transform: translate(-50%, -50%); z-index: 2;
+    position: absolute; left: 0; top: 0; width: 20px; height: 20px; transform: translate(-50%, -50%); z-index: 2;
     transition: left 0.5s cubic-bezier(0.3, 0.7, 0.3, 1), top 0.5s cubic-bezier(0.3, 0.7, 0.3, 1);
     filter: drop-shadow(0 0 5px var(--offc));
   }
@@ -140,7 +136,8 @@
     font: 800 15px/1 var(--display); padding: 4px 7px; border-radius: 5px; background: var(--board); white-space: nowrap;
     animation: stamp 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both;
   }
-  .mark.in { color: var(--offc); box-shadow: inset 0 0 0 2px var(--offc); }
+  .mark.in { color: var(--offc); box-shadow: inset 0 0 0 2px var(--offc); animation-delay: 0.55s; }
+  .mark.still { animation: none; }
   .mark.out { color: var(--defc); box-shadow: inset 0 0 0 2px var(--defc); }
 
   /* Stage: the shot and its answer, face to face */
@@ -155,7 +152,7 @@
   .slot-label.you { color: var(--you); }
   .slot-label.cpu { color: var(--cpu); }
   .slot-body { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-  .slot .face { width: min(124px, 100%); min-height: 156px; }
+  .slot .card { width: min(132px, 100%); }
   .medal {
     --tone: var(--chalk-faint);
     align-self: center; margin-top: 18px; width: 66px; height: 66px; border-radius: 50%;
@@ -183,70 +180,69 @@
   .result.pop .head { animation: pop 0.4s ease-out; }
   @keyframes pop { 0% { transform: scale(0.6); opacity: 0; } 70% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
 
-  /* Cards. Shots and answers are navy with a chalk half-court: the dot is the shooter, the line is the shot, a bar is the defense.
-     Gold shots are gold. The other specials are white. Every card says what it does on its face. */
-  .face {
-    --team: var(--you);
-    --dline: var(--chalk-faint); --dpath: var(--chalk);
-    width: 100%; display: flex; flex-direction: column; gap: 5px;
-    padding: 8px 8px 9px; border-radius: 11px;
-    background: linear-gradient(180deg, color-mix(in srgb, var(--team) 10%, var(--slate)), var(--slate) 60%);
-    border: 2px solid color-mix(in srgb, var(--team) 55%, transparent);
-    color: var(--chalk); text-align: left; font: inherit;
+  /* Cards: each one is the finished printed card, its rule included, so the text always fits the frame.
+     On phone-sized cards the printed rule is small: press and hold any card to see it big, until the next tap. */
+  .card {
     container-type: inline-size;
+    display: block; width: 100%; padding: 0; border: 0; background: none;
+    font: inherit; color: var(--ink); text-align: left;
   }
-  .face.cpu { --team: var(--cpu); }
-  .face.gold { background: var(--gold); color: var(--ink); --dline: rgba(20, 26, 43, 0.3); --dpath: var(--ink); border-color: var(--team); }
-  .face.paper { background: var(--paper); color: var(--ink); border-color: var(--team); }
-  .face .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 4px; }
-  .face .name { font: 700 16px/1.05 var(--ui); letter-spacing: 0.01em; }
-  .face .pts { font: 900 22px/0.8 var(--display); color: var(--team); }
-  .face.gold .pts { color: var(--ink); }
-  .face .head svg { flex: none; margin-top: 1px; }
-  .ico-shield { width: 12px; height: 14px; fill: var(--team); }
-  .face.paper .ico-shield, .face.gold .ico-shield { fill: var(--ink); }
-  .ico-ball { width: 14px; height: 14px; }
-  .face .when { font: 500 12px/1.15 var(--ui); color: var(--chalk-dim); }
-  .face.gold .when, .face.paper .when { color: var(--ink-dim); }
-  .face .rule { font: 700 14px/1.15 var(--ui); margin-top: auto; }
-  /* White cards have no diagram, so the rule sits right under the timing line instead of leaving a gap. */
-  .face.paper .rule { margin-top: 3px; }
-  /* Text before an arrow is its own line. Cards wide enough keep it on one line by shrinking it a touch; phone-sized cards let it wrap. */
-  .face .rule .l1 { display: block; }
-  @container (min-width: 115px) { .face .rule .l1 { white-space: nowrap; font-size: min(1em, 10.3cqi); } }
-  .face .dia { width: 100%; height: 40px; }
-  .nw { white-space: nowrap; }
-  .face.flip { animation: flip 0.38s ease-out; }
+  .cv {
+    display: flex; flex-direction: column; border-radius: 4.5cqi;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s, filter 0.15s;
+  }
+  .cv > img { display: block; width: 100%; height: auto; border-radius: 4.5cqi; }
+  button.card { cursor: pointer; }
+  button.card:hover:not(:disabled) .cv { transform: translateY(-3px); }
+  .card.on .cv { transform: translateY(-8px); box-shadow: 0 0 0 3px var(--chalk), 0 12px 24px rgba(0, 0, 0, 0.5); }
+  .card:disabled { cursor: default; }
+  .card:disabled .cv { opacity: 0.45; filter: saturate(0.4); }
+  .card:focus-visible { outline: none; }
+  .card:focus-visible .cv { outline: 3px solid var(--gold); outline-offset: 3px; }
+  .card.flip .cv { animation: flip 0.38s ease-out; }
   @keyframes flip { from { transform: rotateY(90deg); } to { transform: rotateY(0deg); } }
-  .face.beaten { opacity: 0.5; }
-  .face.beaten .name { text-decoration: line-through; }
-  .face.back {
-    align-items: center; justify-content: center;
-    background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--cpu) 26%, var(--slate)) 0 8px, var(--slate) 8px 16px);
+  /* An answer a Pump Fake beat goes dark. */
+  .card.beaten .cv { filter: grayscale(0.9) brightness(0.55); }
+  .card.empty .cv {
+    aspect-ratio: 1060 / 1484; align-items: center; justify-content: center; text-align: center; padding: 10cqi;
+    border: 2px dashed var(--chalk-faint); color: var(--chalk-dim); font: 600 13px/1.25 var(--ui); box-shadow: none;
   }
-  .face.back span { font: 900 40px/1 var(--display); color: var(--cpu); }
-  .face.empty {
-    align-items: center; justify-content: center; text-align: center;
-    border: 2px dashed var(--chalk-faint); background: transparent; color: var(--chalk-dim);
-    font: 600 14px/1.2 var(--ui);
+  /* The CPU's face-down card: no printed back yet, so a purple one in the style of the score cards. */
+  .card.back .cv {
+    aspect-ratio: 1060 / 1484; align-items: center; justify-content: center; gap: 7cqi;
+    border: 5cqi solid #7b3fe4; border-radius: 6cqi;
+    background:
+      radial-gradient(circle at 50% 38%, rgba(255, 196, 92, 0.35), transparent 55%),
+      repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0 6cqi, transparent 6cqi 12cqi),
+      linear-gradient(180deg, #2a1a66, #160d3c);
   }
-
-  .dia .ln { fill: none; stroke: var(--dline); stroke-width: 1.4; }
-  .dia .hoop { fill: none; stroke: var(--rim); stroke-width: 1.8; }
-  .dia .shot { fill: none; stroke: var(--dpath); stroke-width: 2.4; stroke-linecap: round; }
-  .dia .shot.air { stroke-dasharray: 4 3.5; }
-  .dia .shooter { fill: var(--dpath); }
-  .dia .bar { stroke: var(--team); stroke-width: 4.5; stroke-linecap: round; }
+  .card.back svg { width: 46cqi; height: 46cqi; filter: drop-shadow(0 3cqi 4cqi rgba(0, 0, 0, 0.5)); }
+  .card.back b {
+    font: 900 15cqi/1 var(--display); letter-spacing: 0.02em; text-transform: uppercase; color: #fff;
+    -webkit-text-stroke: 1.2cqi #160d3c; paint-order: stroke fill;
+  }
 
   /* Hand */
   .section-label { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 10px; }
   .section-label > span:first-child { font: 700 16px/1 var(--ui); letter-spacing: 0.02em; }
   .section-label > span + span { font-size: 13px; color: var(--chalk-dim); }
-  .hand { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-  .hand .face { min-height: 150px; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s; }
-  .hand .face:hover:not(:disabled) { transform: translateY(-3px); }
-  .hand .face.on { transform: translateY(-7px); box-shadow: 0 0 0 3px var(--team), 0 10px 20px rgba(0, 0, 0, 0.35); }
-  .hand .face:disabled { cursor: default; opacity: 0.38; }
+  .hand { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-items: start; }
+
+  /* Press and hold any card to see it big. No image menu, drag or text selection gets in the way of the hold. */
+  .card { -webkit-user-select: none; user-select: none; }
+  .card img { -webkit-touch-callout: none; -webkit-user-drag: none; }
+  /* A card you can't play right now still takes a hold, so you can read it. */
+  button.card:disabled { pointer-events: none; }
+  .zoom {
+    position: fixed; inset: 0; z-index: 25; display: grid; place-items: center; padding: 16px;
+    background: rgba(4, 6, 14, 0.74); cursor: pointer;
+  }
+  .zoom img {
+    display: block; width: min(380px, 100%, (100dvh - 32px) / 1.4); height: auto; border-radius: 4.5% / 3.2%;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6); animation: zoom-in 0.15s ease-out;
+  }
+  @keyframes zoom-in { from { transform: scale(0.85); opacity: 0; } }
 
   .actions {
     position: sticky; bottom: 0; z-index: 5; display: flex; gap: 10px;
@@ -276,20 +272,26 @@
   .log li.t-you { --tone: var(--you); }
   .log li.t-cpu { --tone: var(--cpu); }
   .log li.t-you .n, .log li.t-cpu .n { color: var(--tone); }
+  /* The score after the play floats at the right end of the row's last line, so it never takes a line of its own. */
+  .log li .sc { float: right; margin-left: 6px; font: 700 1.1em/1.18 var(--ui); color: var(--chalk); font-variant-numeric: tabular-nums; }
+  /* Phones: the text shrinks a little on narrow phones so the longest line still takes two lines. */
   @media (max-width: 899px) {
-    .log { padding-right: 0; }
+    .log { padding-right: 0; container-type: inline-size; }
+    .log li { font-size: clamp(12px, (100cqi - 28px) * 0.0473, 13px); }
   }
   .more { margin: 0; font-size: 12.5px; color: var(--chalk-faint); }
 
-  /* How to play: folded by default */
-  .rules { background: var(--board); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
-  .rules summary {
-    list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    padding: 14px; font: 800 20px/1 var(--display); border-radius: 10px;
+  /* How to play: a dialog from the header, so the cards get the room */
+  .rules {
+    background: var(--board); color: var(--chalk); border: 1px solid var(--line); border-radius: 12px;
+    padding: 0; width: min(600px, calc(100% - 32px)); max-height: calc(100dvh - 48px); overflow: auto;
   }
-  .rules summary::-webkit-details-marker { display: none; }
-  .rules summary svg { width: 18px; height: 18px; stroke: var(--chalk-dim); fill: none; stroke-width: 2; transition: transform 0.2s; }
-  .rules[open] summary svg { transform: rotate(180deg); }
+  .rules::backdrop { background: rgba(4, 6, 14, 0.78); }
+  .rules .head {
+    position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 14px; background: var(--board);
+  }
+  .rules .head h2 { margin: 0; font: 800 22px/1 var(--display); }
   .rules .body { padding: 0 14px 18px; display: grid; gap: 14px; }
   .rules h3 { margin: 0; font: 700 16px/1 var(--ui); letter-spacing: 0.02em; color: var(--chalk); }
   .rules ul { margin: 0; padding-left: 18px; display: grid; gap: 7px; line-height: 1.45; max-width: 65ch; }
@@ -301,16 +303,35 @@
 
   /* Game over */
   .over {
-    position: fixed; inset: 0; display: grid; place-items: center; z-index: 20;
+    position: fixed; inset: 0; display: grid; grid-template-columns: minmax(0, 1fr); place-items: center; z-index: 20;
     background: rgba(4, 6, 14, 0.8);
     padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
   }
   .over .panel {
     background: var(--board); border: 2px solid var(--tone, var(--chalk)); border-radius: 14px;
-    padding: 26px 24px; display: grid; gap: 12px; text-align: center; width: min(340px, 100%);
+    padding: 26px 24px; display: grid; gap: 12px; text-align: center; width: min(340px, 100%); box-sizing: border-box;
   }
   .over h2 { margin: 0; font: 900 40px/1 var(--display); color: var(--tone, var(--chalk)); }
   .over p { margin: 0; font: 800 28px/1 var(--display); font-variant-numeric: tabular-nums; }
+
+  /* Small phones: a slightly smaller title and scoreboard keep everything inside its frame down to 320px. */
+  @media (max-width: 360px) {
+    .brand h1 { font-size: 26px; }
+    .board { padding: 10px; }
+    .team { gap: 8px; }
+    .team .score { font-size: 38px; }
+    .status strong { font-size: 19px; }
+    .result .head { font-size: 26px; }
+    .go { font-size: 22px; }
+    .over h2 { font-size: 32px; }
+    .over p { font-size: 24px; }
+  }
+  /* Under 360px the longest rows (a Pump Fake) have no room left for the score (the scoreboard is right above), and a bit
+     less padding keeps them on two lines. */
+  @media (max-width: 359px) {
+    .log-box { padding-inline: 12px; }
+    .log li .sc { display: none; }
+  }
 
   /* Wide screens: one screen, no scrolling. Comes last so it overrides the phone layout above. */
   @media (min-width: 900px) {
@@ -320,13 +341,13 @@
       grid-template-areas:
         "top    top"
         "board  board"
-        "court  court"
         "status status"
+        "court  play"
         "stage  play"
         "log    play"
-        "log    act"
-        "log    rules";
-      grid-template-rows: repeat(7, auto) 1fr;
+        "log    act";
+      /* The empty sixth row lets Shoot sit right under the hand, whatever the play-by-play's height. */
+      grid-template-rows: repeat(5, auto) 0 1fr;
       align-items: start;
       gap: 10px 24px;
     }
@@ -337,14 +358,36 @@
     .team .score { font-size: 60px; }
     .target b { font-size: 26px; }
     .status { grid-area: status; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; }
-    .court { grid-area: court; height: 80px; }
+    .court { grid-area: court; }
     .stage { grid-area: stage; }
     .log { gap: 7px; }
     .play { grid-area: play; }
-    .hand .face { min-height: 146px; }
+    /* Hand cards are full cards, so their width also follows the window's height: both rows and Shoot fit on one screen.
+       Very short windows scroll instead. */
+    .hand { grid-template-columns: repeat(3, min((100% - 20px) / 3, max(118px, (100dvh - 330px) / 2.8))); }
     .actions { grid-area: act; position: static; padding: 0; background: none; }
     .log-box { grid-area: log; margin-top: 0; }
-    .rules { grid-area: rules; }
+  }
+
+  /* 1240px and wider: the play-by-play gets a column of its own on the right, so it no longer pushes the court and the
+     cards in play past the bottom of the window. Short windows shrink the cards in play a little instead of scrolling. */
+  @media (min-width: 1240px) {
+    .wrap {
+      max-width: 1340px;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr) 340px;
+      grid-template-areas:
+        "top    top    top"
+        "board  board  board"
+        "status status status"
+        "court  play   log"
+        "stage  play   log"
+        "stage  act    log"
+        "stage  .      log";
+      /* The flexible last row takes whatever the cards in play or the play-by-play need below Shoot, so Shoot stays
+         right under the hand. */
+      grid-template-rows: repeat(6, auto) 1fr;
+    }
+    .slot .card { width: min(132px, 100%, max(92px, (100dvh - 524px) / 1.4)); }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -363,8 +406,11 @@
 
 <main class="wrap">
     <header class="top">
-      <div class="brand"><h1>Crossover</h1><span class="chip">Prototype</span></div>
-      <button class="ghost" id="newGame" type="button">New game</button>
+      <div class="brand"><h1>Crossover</h1></div>
+      <div class="top-actions">
+        <button class="ghost" id="howTo" type="button"><span class="long">How to play</span><span class="short">Rules</span></button>
+        <button class="ghost" id="newGame" type="button">New game</button>
+      </div>
     </header>
 
     <div class="board">
@@ -387,14 +433,66 @@
     </div>
 
     <div class="court" id="court" data-off="you" aria-hidden="true">
-      <div class="arc"></div>
-      <div class="paint"></div>
-      <div class="ft"></div>
-      <div class="backboard"></div>
-      <div class="rim"></div>
-      <span class="zl" data-z="three" style="left:20%">Three</span>
-      <span class="zl" data-z="mid" style="left:54%">Mid-range</span>
-      <span class="zl" data-z="drive" style="left:82%">Drive</span>
+      <!-- In feet: x along the court (right baseline at 94), y across it squashed by 0.3, the far sideline at 0. -->
+      <svg viewBox="-40 -7.5 140 24" preserveAspectRatio="xMaxYMax slice">
+        <defs>
+          <linearGradient id="cStands" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#120a2e"/><stop offset="1" stop-color="#3d2580"/></linearGradient>
+          <pattern id="cCrowdA" width="1.7" height="1.15" patternUnits="userSpaceOnUse">
+            <circle cx="0.4" cy="0.35" r="0.3" fill="#f2a24a"/><circle cx="1.25" cy="0.9" r="0.28" fill="#c652d6"/>
+          </pattern>
+          <pattern id="cCrowdB" width="2.3" height="1.5" patternUnits="userSpaceOnUse">
+            <circle cx="1.5" cy="0.3" r="0.27" fill="#ffd9a0"/><circle cx="0.6" cy="1.1" r="0.3" fill="#e2603c"/>
+          </pattern>
+          <linearGradient id="cHaze" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#120a2e" stop-opacity="0.9"/><stop offset="1" stop-color="#120a2e" stop-opacity="0.05"/></linearGradient>
+          <linearGradient id="cLed" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7a3cf0"/><stop offset="0.5" stop-color="#2f7bff"/><stop offset="1" stop-color="#c03cf0"/></linearGradient>
+          <linearGradient id="cWood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b8763c"/><stop offset="1" stop-color="#e6a868"/></linearGradient>
+          <pattern id="cPlanks" width="12" height="1.2" patternUnits="userSpaceOnUse">
+            <path d="M0,0.6 H12 M0,1.2 H12 M3,0 V0.6 M9,0.6 V1.2" stroke="rgba(90,44,10,0.2)" stroke-width="0.07" fill="none"/>
+          </pattern>
+          <radialGradient id="cSheen" cx="0.8" cy="0.3" r="0.55"><stop offset="0" stop-color="#fff" stop-opacity="0.28"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+          <filter id="cGlow" x="-50%" y="-200%" width="200%" height="500%"><feGaussianBlur stdDeviation="0.5"/></filter>
+        </defs>
+        <!-- The crowd, the lights and the LED board -->
+        <rect x="-40" y="-7.5" width="140" height="6.2" fill="url(#cStands)"/>
+        <rect x="-40" y="-7.5" width="140" height="5.2" fill="url(#cCrowdA)" opacity="0.8"/>
+        <rect x="-40" y="-7.5" width="140" height="5.2" fill="url(#cCrowdB)" opacity="0.65"/>
+        <rect x="-40" y="-7.5" width="140" height="5.2" fill="url(#cHaze)"/>
+        <g fill="#fff3d0" filter="url(#cGlow)">
+          <rect x="-26" y="-7.3" width="4" height="0.7" rx="0.3"/><rect x="-6" y="-7.3" width="4" height="0.7" rx="0.3"/>
+          <rect x="14" y="-7.3" width="4" height="0.7" rx="0.3"/><rect x="34" y="-7.3" width="4" height="0.7" rx="0.3"/>
+          <rect x="54" y="-7.3" width="4" height="0.7" rx="0.3"/><rect x="74" y="-7.3" width="4" height="0.7" rx="0.3"/>
+        </g>
+        <rect x="-40" y="-2.4" width="140" height="0.9" fill="url(#cLed)" filter="url(#cGlow)" opacity="0.8"/>
+        <rect x="-40" y="-2.3" width="140" height="0.8" fill="url(#cLed)"/>
+        <!-- The floor: maple, a purple apron outside the lines -->
+        <rect x="-40" y="-1.5" width="140" height="18" fill="url(#cWood)"/>
+        <rect x="-40" y="-1.5" width="140" height="18" fill="url(#cPlanks)"/>
+        <path d="M-40,-1.5 H100 V16.5 H-40 Z M0,0 V15 H94 V0 Z" style="fill: var(--arena-purple); fill-opacity: 0.62" fill-rule="evenodd"/>
+        <!-- Left half -->
+        <rect x="0" y="5.1" width="19" height="4.8" style="fill: var(--arena-purple); fill-opacity: 0.55"/>
+        <rect class="cl" x="0" y="5.1" width="19" height="4.8"/>
+        <path class="cl" d="M19,5.7 A6,1.8 0 0 1 19,9.3 M0,0.9 H14.2 A23.75,7.125 0 0 1 14.2,14.1 H0"/>
+        <!-- Center court -->
+        <ellipse cx="47" cy="7.5" rx="6" ry="1.8" style="fill: var(--arena-purple)"/>
+        <ellipse class="cl" cx="47" cy="7.5" rx="6" ry="1.8"/>
+        <ellipse class="cl" cx="47" cy="7.5" rx="2" ry="0.6"/>
+        <!-- Right half: the offense's paint, the free throw circle and the three-point line -->
+        <rect class="paint" x="75" y="5.1" width="19" height="4.8"/>
+        <rect class="cl" x="75" y="5.1" width="19" height="4.8"/>
+        <path class="cl" d="M75,5.7 A6,1.8 0 0 0 75,9.3 M94,0.9 H79.8 A23.75,7.125 0 0 0 79.8,14.1 H94"/>
+        <rect class="cl" x="0" y="0" width="94" height="15"/>
+        <path class="cl" d="M47,0 V15"/>
+        <rect x="-40" y="-1.5" width="140" height="18" fill="url(#cSheen)"/>
+        <!-- The hoop, seen from the side: the stand behind the baseline, the backboard, the rim and the net -->
+        <ellipse cx="92.5" cy="7.7" rx="5" ry="0.9" fill="rgba(0, 0, 0, 0.28)"/>
+        <path d="M97.4,4.8 V-4.2 H92.2" fill="none" stroke="#232a5c" stroke-width="0.9" stroke-linejoin="round"/>
+        <path d="M97.4,-1.8 L93.2,-4" fill="none" stroke="#232a5c" stroke-width="0.45"/>
+        <rect x="95.2" y="4.3" width="4.4" height="4" rx="0.5" fill="#232a5c"/>
+        <rect x="95.2" y="4.3" width="4.4" height="0.8" rx="0.4" fill="#4656b8"/>
+        <path d="M90.4,-6.6 L92.2,-6.1 V-1.2 L90.4,-1.7 Z" fill="rgba(226, 238, 255, 0.45)" stroke="#fff" stroke-width="1.6" vector-effect="non-scaling-stroke"/>
+        <path class="net" d="M86,-2.15 L87,0.4 H89.4 L90.4,-2.15 M87.45,-2.15 L87.8,0.4 M88.95,-2.15 L88.6,0.4 M86.35,-1.3 H90.05 M86.7,-0.45 H89.7"/>
+        <ellipse class="rim" cx="88.2" cy="-2.2" rx="2.2" ry="0.6"/>
+      </svg>
       <div id="mark"></div>
       <div class="ball" id="ball"><svg aria-hidden="true"><use href="#bball"></use></svg></div>
     </div>
@@ -426,21 +524,24 @@
       <p class="more" id="more" hidden>Scroll for older plays</p>
     </section>
 
-    <details class="rules" id="rules">
-      <summary>How to play<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></summary>
+</main>
+
+<dialog class="rules" id="rules" aria-labelledby="rulesHead">
+      <div class="head"><h2 id="rulesHead">How to play</h2><button class="ghost" id="closeRules" type="button">Close</button></div>
       <div class="body">
         <ul>
-          <li>When you have the ball, play a shot face up. The other player can answer with a card that stops it, or let it go.</li>
-          <li><strong>Open shot:</strong> Drive and Mid-range score 2. A Three scores 3.</li>
-          <li><strong>Stopped:</strong> no points. A Three stopped by a Close Out is a long rebound, so they score 2 on the fast break.</li>
-          <li>Charge stops a Drive. Contest stops a Mid-range. Close Out stops a Three.</li>
-          <li>After every shot, both players draw back up to 5 cards (6 if you're behind), and the ball goes to the other player, scored or not.</li>
-          <li>No shot in your hand? You get a new hand.</li>
-          <li>You start with the ball and the CPU starts with 1 point. First to 21 wins.</li>
+          <li>When you have the ball, play a shot card: Drive, Mid-range, Three, Slam Dunk or Buzzer Beater.</li>
+          <li>The other player can stop it with an answer card. Nothing stops it, or want to keep your card? Let it go and it scores.</li>
+          <li><strong>Scores:</strong> Drive and Mid-range are worth 2. A Three is worth 3.</li>
+          <li><strong>Stopped:</strong> no points. Charge stops a Drive. Contest stops a Mid-range. Close Out stops a Three, and the defense scores 2.</li>
+          <li>After every shot, both players fill their hand back up to 5 cards, 6 if they're behind. Then the ball goes to the other player, scored or not.</li>
+          <li>No shot in your hand? Swap it for a new hand until you have one.</li>
+          <li>You start with the ball. First to 21 wins.</li>
+          <li>Press and hold any card to see it big. Tap anywhere to put it back.</li>
         </ul>
 
         <h3>Special cards</h3>
-        <p>Gold shots can only be stopped by a Block. The other specials are white. A play is never longer than three cards: shot, answer, Pump Fake.</p>
+        <p>Specials have gold frames. Slam Dunk and Buzzer Beater are gold shots: only a Block stops them, and a Foul makes them score just 1. A shot never takes more than three cards: the shot, one answer and a Pump Fake.</p>
         <dl>
           <dt>Slam Dunk <span>3 in the deck</span></dt><dd>A gold shot worth 2. Only a Block stops it. A Foul makes it 1 point.</dd>
           <dt>Buzzer Beater <span>1 in the deck</span></dt><dd>A gold shot worth 3. Only a Block stops it. A Foul makes it 1 point.</dd>
@@ -453,8 +554,9 @@
         <h3>The computer</h3>
         <p>It always answers when it can, and it keeps track of which cards are gone before it picks a shot.</p>
       </div>
-    </details>
-</main>
+</dialog>
+
+<div class="zoom" id="zoom" hidden><img id="zoomImg" alt="" width="600" height="840"></div>
 
 <div class="over" id="over" hidden>
   <div class="panel">
@@ -472,7 +574,7 @@
   const verb = (who, base) => (who === 'you' ? base : base + 's');
   const TARGET = 21;
   const HAND = 5;
-  const RULES_VERSION = 4;
+  const RULES_VERSION = 5;
 
   const SHOTS = ['drive', 'mid', 'three', 'dunk', 'buzzer'];
   // The 54-card deck, the size of a normal deck of cards. Face text is the agreed card wording.
@@ -494,15 +596,16 @@
   const ORDER = ['drive', 'mid', 'three', 'dunk', 'buzzer', 'charge', 'contest', 'closeout', 'steal', 'block', 'foul', 'pumpfake'];
   const isShot = (k) => SHOTS.includes(k);
   const canAnswer = (a, shot) => !!(CARDS[a].stops && CARDS[a].stops.includes(shot));
-  // Where each shot is taken on the court strip (x%, y%), and which spot label it lights up.
-  const SPOT = { three: [20, 42], mid: [55, 30], drive: [79, 46], dunk: [87, 38], buzzer: [8, 30] };
-  const ZONE = { three: 'three', mid: 'mid', drive: 'drive', dunk: 'drive', buzzer: 'three' };
-  const RIM = [93, 50];
+  // Where each shot is taken on the court, in feet: [along the court, across it, height of the ball].
+  const SPOT = { three: [69, 41, 4], mid: [74, 18, 4], drive: [81, 33, 3], dunk: [85.5, 28, 7], buzzer: [59, 24, 4] };
+  const RIM = [88.2, 25, 9.3], CENTER = [47, 25, 3];
+  // Card images in cards/: the finished printed cards.
+  const ART = {
+    drive: 'drive', mid: 'mid-range', three: 'three', charge: 'charge', contest: 'contest', closeout: 'close-out',
+    dunk: 'slam-dunk', buzzer: 'buzzer-beater', pumpfake: 'pump-fake', block: 'block', steal: 'steal', foul: 'foul',
+  };
   const OPEN_HEAD = { drive: 'Layup!', mid: 'Swish!', three: 'Three!', dunk: 'Slam dunk!', buzzer: 'Buzzer beater!' };
   const STOP_HEAD = { charge: 'Charge!', contest: 'Contested!', closeout: 'Closed out!', block: 'Blocked!' };
-
-  const BALL_ICON = '<svg class="ico-ball" aria-hidden="true"><use href="#bball"></use></svg>';
-  const SHIELD_ICON = '<svg class="ico-shield" viewBox="0 0 22 26" aria-hidden="true"><path d="M11 1l10 3.6v8c0 6.2-4.2 10.6-10 12.4C5.2 23.2 1 18.8 1 12.6v-8L11 1z"></path></svg>';
 
   const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
@@ -516,13 +619,13 @@
     for (const [k, c] of Object.entries(CARDS)) for (let i = 0; i < c.count; i++) deck.push(k);
     S = {
       v: RULES_VERSION,
-      score: { you: 0, cpu: 1 }, poss: 'you',
+      score: { you: 0, cpu: 0 }, poss: 'you',
       hands: { you: [], cpu: [] }, deck: shuffle(deck), discard: [],
       phase: 'shoot', sel: null, cur: null, last: null, showLast: false, flip: false,
       log: [], n: 0,
     };
     refill('you'); refill('cpu');
-    S.log.unshift({ n: 0, head: 'Tip-off', text: 'You get the ball first. The CPU starts with 1 point.', tone: 'you' });
+    S.log.unshift({ n: 0, head: 'Tip-off', text: 'You get the ball first.', tone: 'you', sc: '0–0' });
     startPossession('you');
     render();
   }
@@ -589,37 +692,42 @@
     return { type: 'stopped', off: 0, def: 0 };
   }
 
+  // The stage shouts the call ("Swish!", "Blocked!"). The play-by-play leads with who got the points, like Snap Call's
+  // "+1 zone" ("You +2", "CPU +2", "Stopped"), then both cards and, for a special, why: "…, but the Pump Fake beat it."
   function describe(off, shot, ans, r) {
     const def = other(off);
     const played = `${NAME[off]} played ${CARDS[shot].name}.`;
-    const answered = ans ? `${NAME[def]} played ${CARDS[ans].name}.` : def === 'you' ? 'You let it go.' : 'CPU had no answer.';
+    const answered = ans ? `${NAME[def]} played ${CARDS[ans].name}` : def === 'you' ? 'You let it go' : 'CPU had no answer';
     const scores = (w, n) => `${NAME[w]} ${verb(w, 'score')} ${n}.`;
+    const plus = (w, n) => `${NAME[w]} +${n}`;
     switch (r.type) {
-      case 'open': return { head: OPEN_HEAD[shot], detail: scores(off, r.off), log: `${played} ${answered} ${scores(off, r.off)}`, tone: off };
-      case 'crossed': return { head: 'Pump Fake!', detail: `It beat the ${CARDS[ans].name}. ${scores(off, r.off)}`, log: `${played} ${answered} The Pump Fake beat it. ${scores(off, r.off)}`, tone: off };
-      case 'foul': return { head: 'Foul', detail: `The ${CARDS[shot].name} scores just 1.`, log: `${played} ${answered} ${scores(off, 1)}`, tone: off };
-      case 'steal': return { head: 'Steal!', detail: `${NAME[def]} ${verb(def, 'steal')} it and ${verb(def, 'score')} 2.`, log: `${played} ${answered} ${scores(def, 2)}`, tone: def };
-      case 'fastbreak': return { head: STOP_HEAD[ans], detail: `Stopped. ${NAME[def]} ${verb(def, 'score')} 2 on the fast break.`, log: `${played} ${answered} Fast break: ${scores(def, 2)}`, tone: def };
-      default: return { head: STOP_HEAD[ans], detail: 'Stopped. No points.', log: `${played} ${answered} No points.`, tone: def };
+      case 'open': return { head: OPEN_HEAD[shot], detail: scores(off, r.off), logHead: plus(off, r.off), log: `${played} ${answered}.`, tone: off };
+      case 'crossed': return { head: 'Pump Fake!', detail: `It beat the ${CARDS[ans].name}. ${scores(off, r.off)}`, logHead: plus(off, r.off), log: `${played} ${answered}, but the Pump Fake beat it.`, tone: off };
+      case 'foul': return { head: 'Foul', detail: `The ${CARDS[shot].name} scores just 1.`, logHead: plus(off, 1), log: `${played} ${answered}: just 1 point.`, tone: off };
+      case 'steal': return { head: 'Steal!', detail: `${NAME[def]} ${verb(def, 'steal')} it and ${verb(def, 'score')} 2.`, logHead: plus(def, 2), log: `${played} ${answered}.`, tone: def };
+      case 'fastbreak': return { head: STOP_HEAD[ans], detail: `Stopped. ${NAME[def]} ${verb(def, 'score')} 2 on the fast break.`, logHead: plus(def, 2), log: `${played} ${answered}: fast break.`, tone: def };
+      default: return { head: STOP_HEAD[ans], detail: 'Stopped. No points.', logHead: 'Stopped', log: `${played} ${answered}.`, tone: def };
     }
   }
 
-  function addLog(e) { S.log.unshift(e); if (S.log.length > 80) S.log.length = 80; }
+  // Every row keeps the score right after it: you first, like the scoreboard.
+  function addLog(e) { S.log.unshift({ ...e, sc: `${S.score.you}–${S.score.cpu}` }); if (S.log.length > 80) S.log.length = 80; }
 
-  // A possession starts. No shot in hand: discard it and draw a new one. Still none: the ball goes over.
+  // A possession starts. No shot in hand: swap it for a new hand until there is one (a second swap is about 1 game in 220).
   function startPossession(w) {
     S.poss = w; S.sel = null; S.cur = null;
-    if (!hasShot(w)) {
+    let swaps = 0;
+    while (!hasShot(w) && swaps < 50) {
       S.discard.push(...S.hands[w].map((c) => c.key));
       S.hands[w] = [];
       refill(w);
-      const still = !hasShot(w);
-      const who = w === 'you' ? 'You had no shot, so you drew a new hand.' : 'CPU had no shot, so it drew a new hand.';
-      addLog({ n: S.n, head: 'New hand', text: still ? `${who} Still no shot: the ball goes over.` : who, tone: w });
-      if (still) {
-        if (w === 'you') { S.poss = 'cpu'; S.phase = 'next'; return; }
-        return startPossession('you');
-      }
+      swaps++;
+    }
+    if (swaps) {
+      const many = swaps > 1;
+      addLog({ n: S.n, head: 'New hand', tone: w, text: w === 'you'
+        ? `You had no shot, so you drew ${many ? 'new hands until you had one' : 'a new hand'}.`
+        : `CPU had no shot, so it drew ${many ? 'new hands until it had one' : 'a new hand'}.` });
     }
     if (w === 'you') { S.phase = 'shoot'; return; }
     S.cur = { off: 'cpu', shot: take('cpu', cpuPickShot()), ans: null, cross: null };
@@ -673,7 +781,7 @@
     S.n++;
     const t = describe(off, shot.key, ans && ans.key, r);
     S.last = { n: S.n, off, shot: shot.key, ans: ans && ans.key, cross: !!cross, r, head: t.head, detail: t.detail, tone: t.tone };
-    addLog({ n: S.n, head: t.head, text: t.log, tone: t.tone });
+    addLog({ n: S.n, head: t.logHead, text: t.log, tone: t.tone });
     S.cur = null; S.sel = null; S.showLast = true;
     if (S.score.you >= TARGET || S.score.cpu >= TARGET) { S.phase = 'over'; render(); return; }
     refill('you'); refill('cpu');
@@ -689,50 +797,11 @@
   }
 
   // ---------- Drawing ----------
-  // A half court from above, hoop at the top. The dot is the shooter and the line is the shot (dashed in the air).
-  const DIA = {
-    drive:  { p: [70, 46], d: 'M70,46 Q66,26 53,14', solid: true, bar: [66, 26, 53, 14, 0.5] },
-    mid:    { p: [71, 34], d: 'M71,34 Q66,8 53,10', bar: [71, 34, 66, 8, 0.25] },
-    three:  { p: [14, 53], d: 'M14,53 Q20,12 47,10', bar: [14, 53, 20, 12, 0.22] },
-    dunk:   { p: [66, 44], d: 'M66,44 Q62,24 51,13', solid: true },
-    buzzer: { p: [7, 61], d: 'M7,61 Q14,2 47,9' },
-  };
-  function diagram(key) {
-    const answerTo = isShot(key) ? null : CARDS[key].stops[0];
-    const r = DIA[answerTo || key];
-    let s = '<path class="ln" d="M4,4 H96 M36,4 V30 H64 V4 M8,4 V16 A42,42 0 0 0 92,16 V4"/><circle class="ln" cx="50" cy="30" r="8"/>'
-      + '<path class="ln" d="M44,5.5 H56"/><circle class="hoop" cx="50" cy="10" r="3.2"/>';
-    s += `<path class="shot${r.solid ? '' : ' air'}" d="${r.d}"/><circle class="shooter" cx="${r.p[0]}" cy="${r.p[1]}" r="3"/>`;
-    if (answerTo) {
-      const [ax, ay, bx, by, t] = r.bar;
-      let dx = bx - ax, dy = by - ay;
-      const L = Math.hypot(dx, dy); dx /= L; dy /= L;
-      const cx = ax + (bx - ax) * t, cy = ay + (by - ay) * t, nx = -dy * 7, ny = dx * 7;
-      s += `<line class="bar" x1="${(cx + nx).toFixed(1)}" y1="${(cy + ny).toFixed(1)}" x2="${(cx - nx).toFixed(1)}" y2="${(cy - ny).toFixed(1)}"/>`;
-    }
-    return `<svg class="dia" viewBox="0 0 100 64" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${s}</svg>`;
-  }
-
-  const faceClass = (key) => ({ gold: ' gold', counter: ' paper', special: ' paper' })[CARDS[key].kind] || '';
-  // Card names never break across lines on narrow cards ("Mid-" / "range").
-  const keep = (t) => t.replace(/Mid-range|Close Out|Slam Dunk|Buzzer Beater|Pump Fake|gold shots/g, '<span class="nw">$&</span>');
-  // The arrow always starts the second line: "Stops a Drive or Mid-range" / "→ you score 2".
-  const arrow = (t) => t.replace(/^(.*?) → (.*)$/, '<span class="l1">$1</span>→ $2');
-  function faceInner(key) {
-    const c = { ...CARDS[key] };
-    if (c.kind === 'shot') c.rule = `Stopped by ${c.by}${c.then ? ` → ${c.then}` : ''}`;
-    if (c.rule) c.rule = arrow(keep(c.rule));
-    if (c.kind === 'shot') {
-      return `<span class="head"><span class="name">${c.name}</span><span class="pts">${c.pts}</span></span>${diagram(key)}`
-        + `<span class="rule">${c.rule}</span>`;
-    }
-    if (c.kind === 'answer') return `<span class="head"><span class="name">${c.name}</span>${SHIELD_ICON}</span>${diagram(key)}<span class="rule">${c.rule}</span>`;
-    if (c.kind === 'gold') return `<span class="head"><span class="name">${c.name}</span><span class="pts">${c.pts}</span></span><span class="when">${c.when}</span>${diagram(key)}<span class="rule">${c.rule}</span>`;
-    const icon = c.kind === 'counter' ? BALL_ICON : SHIELD_ICON;
-    return `<span class="head"><span class="name">${c.name}</span>${icon}</span><span class="when">${c.when}</span><span class="rule">${c.rule}</span>`;
-  }
-  const face = (key, owner, extra = '') => `<div class="face ${owner}${faceClass(key)}${extra}">${faceInner(key)}</div>`;
-  const empty = (text) => `<div class="face empty">${text}</div>`;
+  // Every card is its printed image, rule included.
+  const cardImg = (key) => `<span class="cv"><img src="cards/${ART[key]}.webp" alt="${CARDS[key].name}" width="600" height="840" decoding="sync"></span>`;
+  const face = (key, owner, extra = '') => `<div class="card ${owner}${extra}">${cardImg(key)}</div>`;
+  const empty = (text) => `<div class="card empty"><span class="cv">${text}</span></div>`;
+  const BACK = '<div class="card back cpu"><span class="cv" aria-label="CPU card, face down"><svg aria-hidden="true"><use href="#bball"></use></svg><b>Crossover</b></span></div>';
   const tag = (text, st, small) => `<span class="tag" data-st="${st}"><span>${text}</span>${small ? `<small>${small}</small>` : ''}</span>`;
 
   // Show the newest 5 plays; older ones scroll. On wide screens a short window shows down to 3 so the game never needs page scrolling.
@@ -753,8 +822,19 @@
     return names.length > 1 ? `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}` : names[0];
   }
 
-  function renderCourt() {
-    const court = $('#court'), ball = $('#ball'), mark = $('#mark');
+  // A point on the court in feet → pixels in the court box. The camera on the sideline squashes the court's depth
+  // to 0.3 and lifts heights by 0.95, and the drawing keeps its bottom-right corner in view (as its viewBox says).
+  const VB = { x: -40, y: -7.5, w: 140, h: 24 };
+  function courtPx([x, y, h]) {
+    const el = $('#court'), W = el.clientWidth, H = el.clientHeight;
+    const s = Math.max(W / VB.w, H / VB.h);
+    return [W - VB.w * s + (x - VB.x) * s, H - VB.h * s + (y * 0.3 - h * 0.95 - VB.y) * s];
+  }
+  const put = (el, [x, y]) => { el.style.left = `${x}px`; el.style.top = `${y}px`; };
+
+  // instant: the box changed size, so everything moves to its new place without animating.
+  function renderCourt(instant = false) {
+    const court = $('#court'), ball = $('#ball');
     const L = S.showLast && S.last;
     let off = S.poss, spot = null, state = 'idle';
     if (L) { off = L.off; spot = L.shot; state = L.r.off > 0 ? 'in' : 'out'; }
@@ -762,28 +842,39 @@
     else if (S.sel && S.phase === 'shoot') { const c = find('you', (x) => x.id === S.sel); if (c && isShot(c.key)) { spot = c.key; state = 'up'; } }
     court.dataset.off = off;
     court.classList.toggle('in', state === 'in');
-    court.querySelectorAll('.zl').forEach((z) => z.classList.toggle('here', !!spot && ZONE[spot] === z.dataset.z));
-    const at = state === 'idle' ? [5, 50] : state === 'in' ? RIM : SPOT[spot];
+    const at = courtPx(state === 'idle' ? CENTER : state === 'in' ? RIM : SPOT[spot]);
     const key = `${state}:${spot}:${L ? L.n : ''}`;
-    if (key !== ballAt) {
-      // A made shot starts at its spot, then flies to the rim.
-      if (state === 'in' && ballAt.split(':')[0] !== 'in') {
-        ball.classList.add('instant');
-        ball.style.left = `${SPOT[spot][0]}%`; ball.style.top = `${SPOT[spot][1]}%`;
-        void ball.offsetWidth;
-        ball.classList.remove('instant');
-      }
-      ball.style.left = `${at[0]}%`; ball.style.top = `${at[1]}%`;
-      if (state === 'in') mark.outerHTML = `<div id="mark" class="mark in" style="left:84%;top:24%">+${L.r.off}</div>`;
-      else if (state === 'out') {
-        // The stamp sits beside the ball, on the side with more room.
-        const [x, y] = SPOT[spot];
-        const place = x < 50 ? `left:${x + 2.5}%;translate:0 -50%` : `left:${x - 2.5}%;translate:-100% -50%`;
-        mark.outerHTML = `<div id="mark" class="mark out" style="${place};top:${y}%">${L.r.def ? `+${L.r.def} ${NAME[other(L.off)]}` : 'Stopped'}</div>`;
-      }
-      else mark.outerHTML = '<div id="mark"></div>';
-      ballAt = key;
+    if (key === ballAt && !instant) return;
+    if (key !== ballAt && state === 'in') {
+      // A made shot flies from its spot, up over the rim and down into the net.
+      const from = courtPx(SPOT[spot]);
+      const apex = courtPx([(SPOT[spot][0] + RIM[0]) / 2, (SPOT[spot][1] + RIM[1]) / 2, 16]);
+      ball.getAnimations().forEach((a) => a.cancel());
+      ball.classList.add('instant');
+      put(ball, at);
+      ball.animate([
+        { left: `${from[0]}px`, top: `${from[1]}px` },
+        { left: `${apex[0]}px`, top: `${apex[1]}px`, easing: 'ease-in' },
+        { left: `${at[0]}px`, top: `${at[1]}px` },
+      ], { duration: 700, easing: 'ease-out' }).finished.then(() => ball.classList.remove('instant'), () => {});
+    } else if (instant) {
+      ball.classList.add('instant'); put(ball, at); void ball.offsetWidth; ball.classList.remove('instant');
+    } else put(ball, at);
+
+    // The stamp: points by the rim, or "Stopped" beside the ball on the side with more room.
+    const mark = $('#mark');
+    let html = '<div id="mark"></div>';
+    if (state === 'in') {
+      const [x, y] = courtPx([81, 25, 12]);
+      html = `<div id="mark" class="mark in" style="left:${x}px;top:${y}px">+${L.r.off}</div>`;
+    } else if (state === 'out') {
+      const [x, y] = courtPx(SPOT[spot]);
+      const place = x < court.clientWidth / 2 ? `left:${x + 16}px;translate:0 -50%` : `left:${x - 16}px;translate:-100% -50%`;
+      html = `<div id="mark" class="mark out" style="${place};top:${y}px">${L.r.def ? `+${L.r.def} ${NAME[other(L.off)]}` : 'Stopped'}</div>`;
     }
+    // A resize only moves the stamp; it doesn't stamp it again.
+    mark.outerHTML = instant && key === ballAt ? html.replace('class="mark ', 'class="mark still ') : html;
+    ballAt = key;
   }
 
   function renderStage() {
@@ -804,7 +895,7 @@
       const c = S.cur;
       if (c.off === 'you') {
         you = face(c.shot.key, 'you');
-        cpu = c.ans ? face(c.ans.key, 'cpu', S.flip ? ' flip' : '') : '<div class="face back cpu"><span>?</span></div>';
+        cpu = c.ans ? face(c.ans.key, 'cpu', S.flip ? ' flip' : '') : BACK;
       } else {
         cpu = face(c.shot.key, 'cpu', S.flip ? ' flip' : '');
         const sel = find('you', (x) => x.id === S.sel);
@@ -813,8 +904,8 @@
       }
     } else {
       const sel = find('you', (x) => x.id === S.sel);
-      you = sel ? face(sel.key, 'you') : empty(S.phase === 'next' ? 'CPU has the ball' : 'Pick a shot below');
-      cpu = '<div class="face back cpu"><span>?</span></div>';
+      you = sel ? face(sel.key, 'you') : empty(S.phase === 'next' ? 'CPU has the ball' : 'Pick a shot below. Hold a card to see it big.');
+      cpu = BACK;
     }
     $('#slotYou').innerHTML = you;
     $('#slotCpu').innerHTML = cpu;
@@ -879,7 +970,7 @@
     $('#hand').innerHTML = hand.map((c) => {
       const on = S.sel === c.id;
       const ok = playable(c.key);
-      return `<button type="button" class="face you${faceClass(c.key)}${on ? ' on' : ''}" data-id="${c.id}" aria-pressed="${on}"${ok ? '' : ' disabled'}>${faceInner(c.key)}</button>`;
+      return `<button type="button" class="card you${on ? ' on' : ''}" data-id="${c.id}" aria-pressed="${on}"${ok ? '' : ' disabled'}>${cardImg(c.key)}</button>`;
     }).join('');
 
     // Actions
@@ -898,7 +989,7 @@
     if (btn[2]) alt.textContent = btn[2];
 
     // Play by play
-    $('#log').innerHTML = S.log.map((e) => `<li class="t-${e.tone}"><span class="n">${e.n || '–'}</span><span><b>${e.head}</b>${e.text}</span></li>`).join('');
+    $('#log').innerHTML = S.log.map((e) => `<li class="t-${e.tone}"><span class="n">${e.n || '–'}</span><span><b>${e.head}</b>${e.text}${e.sc ? `<span class="sc">${e.sc}</span>` : ''}</span></li>`).join('');
     fitLog();
 
     // Game over
@@ -936,8 +1027,61 @@
   });
   $('#newGame').addEventListener('click', newGame);
   $('#again').addEventListener('click', newGame);
-  $('#rules').addEventListener('toggle', fitLog);
+  $('#howTo').addEventListener('click', () => $('#rules').showModal());
+  $('#closeRules').addEventListener('click', () => $('#rules').close());
+  // A tap on the dimmed page outside the box closes it too.
+  $('#rules').addEventListener('click', (e) => { if (e.target === $('#rules')) $('#rules').close(); });
   window.addEventListener('resize', fitLog);
+  // The court keeps its drawing's corner in view, so the ball and stamp move when the box changes size.
+  new ResizeObserver(() => { if (S) renderCourt(true); }).observe($('#court'));
+
+  // Press and hold a card to see it big; it stays open until the next tap. A quick tap still picks the card.
+  // Cards are found by position, since a disabled card ignores the pointer.
+  const ZOOMABLE = '.hand .card, .slot .card:not(.back):not(.empty)';
+  let hold = null, zoomed = false, swallowClick = false;
+  function cardImgAt(x, y) {
+    const el = [...document.querySelectorAll(ZOOMABLE)].find((c) => {
+      const r = c.getBoundingClientRect();
+      return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+    });
+    return el ? el.querySelector('img') : null;
+  }
+  function showZoom(img) {
+    hold = null; zoomed = true; swallowClick = true;
+    $('#zoomImg').src = img.currentSrc || img.src;
+    $('#zoomImg').alt = img.alt;
+    $('#zoom').hidden = false;
+  }
+  function closeZoom() { zoomed = false; $('#zoom').hidden = true; }
+  function cancelHold() {
+    if (!hold) return;
+    clearTimeout(hold.timer);
+    hold = null;
+  }
+  document.addEventListener('pointerdown', (e) => {
+    swallowClick = false;
+    cancelHold();
+    // The tap that closes the big card does nothing else.
+    if (zoomed) { closeZoom(); swallowClick = true; return; }
+    if (e.button !== 0 || e.target.closest('.over, dialog')) return;
+    const img = cardImgAt(e.clientX, e.clientY);
+    if (img) hold = { x: e.clientX, y: e.clientY, timer: setTimeout(() => showZoom(img), 400) };
+  });
+  // Moving the finger before the card opens means scrolling, not holding.
+  document.addEventListener('pointermove', (e) => {
+    if (hold && Math.hypot(e.clientX - hold.x, e.clientY - hold.y) > 10) cancelHold();
+  });
+  document.addEventListener('pointerup', cancelHold);
+  document.addEventListener('pointercancel', cancelHold);
+  document.addEventListener('keydown', (e) => { if (zoomed && e.key === 'Escape') closeZoom(); });
+  // Letting go after a hold, or the tap that closes the big card, must not pick or drop a card.
+  document.addEventListener('click', (e) => {
+    if (!swallowClick) return;
+    swallowClick = false;
+    e.preventDefault(); e.stopPropagation();
+  }, true);
+  document.addEventListener('contextmenu', (e) => { if (cardImgAt(e.clientX, e.clientY)) e.preventDefault(); });
+  for (const f of Object.values(ART)) new Image().src = `cards/${f}.webp`;
 
   // Keep the game going across live updates of this page.
   if (window.claude && window.claude.hot && window.claude.hot.snapshot) window.claude.hot.snapshot(() => ({ S, uid }));
