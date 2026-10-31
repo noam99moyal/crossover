@@ -326,8 +326,8 @@
     .over h2 { font-size: 32px; }
     .over p { font-size: 24px; }
   }
-  /* Under 360px the longest rows have no room left for the score (the scoreboard is right above), and a bit less padding
-     keeps "Still no shot: the ball goes over." on two lines. */
+  /* Under 360px the longest rows (a Pump Fake) have no room left for the score (the scoreboard is right above), and a bit
+     less padding keeps them on two lines. */
   @media (max-width: 359px) {
     .log-box { padding-inline: 12px; }
     .log li .sc { display: none; }
@@ -530,18 +530,18 @@
       <div class="head"><h2 id="rulesHead">How to play</h2><button class="ghost" id="closeRules" type="button">Close</button></div>
       <div class="body">
         <ul>
-          <li>When you have the ball, play a shot face up. The other player can answer with a card that stops it, or let it go.</li>
-          <li><strong>Open shot:</strong> Drive and Mid-range score 2. A Three scores 3.</li>
-          <li><strong>Stopped:</strong> no points. A Three stopped by a Close Out is a long rebound, so they score 2 on the fast break.</li>
-          <li>Charge stops a Drive. Contest stops a Mid-range. Close Out stops a Three.</li>
-          <li>After every shot, both players draw back up to 5 cards (6 if you're behind), and the ball goes to the other player, scored or not.</li>
-          <li>No shot in your hand? You get a new hand.</li>
-          <li>You start with the ball and the CPU starts with 1 point. First to 21 wins.</li>
+          <li>When you have the ball, play a shot card: Drive, Mid-range, Three, Slam Dunk or Buzzer Beater.</li>
+          <li>The other player can stop it with an answer card. Nothing stops it, or want to keep your card? Let it go and it scores.</li>
+          <li><strong>Scores:</strong> Drive and Mid-range are worth 2. A Three is worth 3.</li>
+          <li><strong>Stopped:</strong> no points. Charge stops a Drive. Contest stops a Mid-range. Close Out stops a Three, and the defense scores 2.</li>
+          <li>After every shot, both players fill their hand back up to 5 cards, 6 if they're behind. Then the ball goes to the other player, scored or not.</li>
+          <li>No shot in your hand? Swap it for a new hand until you have one.</li>
+          <li>You start with the ball. First to 21 wins.</li>
           <li>Press and hold any card to see it big. Tap anywhere to put it back.</li>
         </ul>
 
         <h3>Special cards</h3>
-        <p>Specials have gold frames. The gold shots, Slam Dunk and Buzzer Beater, can only be stopped by a Block. A play is never longer than three cards: shot, answer, Pump Fake.</p>
+        <p>Specials have gold frames. Slam Dunk and Buzzer Beater are gold shots: only a Block stops them, and a Foul makes them score just 1. A shot never takes more than three cards: the shot, one answer and a Pump Fake.</p>
         <dl>
           <dt>Slam Dunk <span>3 in the deck</span></dt><dd>A gold shot worth 2. Only a Block stops it. A Foul makes it 1 point.</dd>
           <dt>Buzzer Beater <span>1 in the deck</span></dt><dd>A gold shot worth 3. Only a Block stops it. A Foul makes it 1 point.</dd>
@@ -574,7 +574,7 @@
   const verb = (who, base) => (who === 'you' ? base : base + 's');
   const TARGET = 21;
   const HAND = 5;
-  const RULES_VERSION = 4;
+  const RULES_VERSION = 5;
 
   const SHOTS = ['drive', 'mid', 'three', 'dunk', 'buzzer'];
   // The 54-card deck, the size of a normal deck of cards. Face text is the agreed card wording.
@@ -619,13 +619,13 @@
     for (const [k, c] of Object.entries(CARDS)) for (let i = 0; i < c.count; i++) deck.push(k);
     S = {
       v: RULES_VERSION,
-      score: { you: 0, cpu: 1 }, poss: 'you',
+      score: { you: 0, cpu: 0 }, poss: 'you',
       hands: { you: [], cpu: [] }, deck: shuffle(deck), discard: [],
       phase: 'shoot', sel: null, cur: null, last: null, showLast: false, flip: false,
       log: [], n: 0,
     };
     refill('you'); refill('cpu');
-    S.log.unshift({ n: 0, head: 'Tip-off', text: 'You get the ball first. The CPU starts with 1 point.', tone: 'you', sc: '0–1' });
+    S.log.unshift({ n: 0, head: 'Tip-off', text: 'You get the ball first.', tone: 'you', sc: '0–0' });
     startPossession('you');
     render();
   }
@@ -713,20 +713,21 @@
   // Every row keeps the score right after it: you first, like the scoreboard.
   function addLog(e) { S.log.unshift({ ...e, sc: `${S.score.you}–${S.score.cpu}` }); if (S.log.length > 80) S.log.length = 80; }
 
-  // A possession starts. No shot in hand: discard it and draw a new one. Still none: the ball goes over.
+  // A possession starts. No shot in hand: swap it for a new hand until there is one (a second swap is about 1 game in 220).
   function startPossession(w) {
     S.poss = w; S.sel = null; S.cur = null;
-    if (!hasShot(w)) {
+    let swaps = 0;
+    while (!hasShot(w) && swaps < 50) {
       S.discard.push(...S.hands[w].map((c) => c.key));
       S.hands[w] = [];
       refill(w);
-      const still = !hasShot(w);
-      const who = w === 'you' ? 'You had no shot, so you drew a new hand.' : 'CPU had no shot, so it drew a new hand.';
-      addLog({ n: S.n, head: 'New hand', text: still ? `${who} Still no shot: the ball goes over.` : who, tone: w });
-      if (still) {
-        if (w === 'you') { S.poss = 'cpu'; S.phase = 'next'; return; }
-        return startPossession('you');
-      }
+      swaps++;
+    }
+    if (swaps) {
+      const many = swaps > 1;
+      addLog({ n: S.n, head: 'New hand', tone: w, text: w === 'you'
+        ? `You had no shot, so you drew ${many ? 'new hands until you had one' : 'a new hand'}.`
+        : `CPU had no shot, so it drew ${many ? 'new hands until it had one' : 'a new hand'}.` });
     }
     if (w === 'you') { S.phase = 'shoot'; return; }
     S.cur = { off: 'cpu', shot: take('cpu', cpuPickShot()), ans: null, cross: null };
