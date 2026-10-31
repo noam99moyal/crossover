@@ -379,6 +379,27 @@
     .log-box { grid-area: log; margin-top: 0; }
   }
 
+  /* 1240px and wider: the play-by-play gets a column of its own on the right, so it no longer pushes the court and the
+     cards in play past the bottom of the window. Short windows shrink the cards in play a little instead of scrolling. */
+  @media (min-width: 1240px) {
+    .wrap {
+      max-width: 1340px;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr) 340px;
+      grid-template-areas:
+        "top    top    top"
+        "board  board  board"
+        "status status status"
+        "court  play   log"
+        "stage  play   log"
+        "stage  act    log"
+        "stage  .      log";
+      /* The flexible last row takes whatever the cards in play or the play-by-play need below Shoot, so Shoot stays
+         right under the hand. */
+      grid-template-rows: repeat(6, auto) 1fr;
+    }
+    .slot .card { width: min(132px, 100%, max(92px, (100dvh - 524px) / 1.4)); }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
   }
