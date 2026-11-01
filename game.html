@@ -101,6 +101,8 @@
   .has-ball .poss { visibility: visible; }
   .target { text-align: center; font: 600 12px/1.2 var(--ui); color: var(--chalk-dim); }
   .target b { display: block; font: 800 20px/1 var(--display); color: var(--chalk); }
+  /* "Hard" sits next to the CPU label, so the scoreboard stays the same height */
+  .lvl-tag { margin-left: 0.5em; font-size: 0.68em; letter-spacing: 0.1em; color: var(--gold); vertical-align: 0.12em; }
   .pips { display: flex; gap: 3px; }
   .pips i { width: 8px; height: 12px; border-radius: 2px; background: var(--cpu); opacity: 0.75; }
 
@@ -301,6 +303,18 @@
   .rules dt span { color: var(--chalk-faint); font-weight: 600; }
   .rules dd { margin: 2px 0 0; color: var(--chalk-dim); line-height: 1.4; }
 
+  /* New game: pick Normal or Hard */
+  .level { width: min(420px, calc(100% - 32px)); }
+  .level .body { gap: 10px; }
+  .lvl-pick {
+    display: grid; gap: 6px; text-align: left; cursor: pointer; padding: 14px 16px;
+    background: transparent; color: var(--chalk); border: 1px solid var(--chalk-faint); border-radius: 10px;
+  }
+  .lvl-pick:hover { border-color: var(--chalk); }
+  .lvl-pick b { font: 800 22px/1 var(--display); letter-spacing: 0.03em; }
+  .lvl-pick[data-level="hard"] b { color: var(--gold); }
+  .lvl-pick span { font: 400 14px/1.35 var(--ui); color: var(--chalk-dim); }
+
   /* Game over */
   .over {
     position: fixed; inset: 0; display: grid; grid-template-columns: minmax(0, 1fr); place-items: center; z-index: 20;
@@ -320,6 +334,8 @@
     .board { padding: 10px; }
     .team { gap: 8px; }
     .team .score { font-size: 38px; }
+    .pips { gap: 2px; }
+    .pips i { width: 7px; }
     .status strong { font-size: 19px; }
     .result .head { font-size: 26px; }
     .go { font-size: 22px; }
@@ -425,7 +441,7 @@
       <div class="team cpu" id="tCpu">
         <span class="score" id="sCpu">0</span>
         <span class="who">
-          <span class="label">CPU</span>
+          <span class="label">CPU<span class="lvl-tag" id="lvlTag" hidden>Hard</span></span>
           <span class="poss"><svg aria-hidden="true"><use href="#bball"></use></svg>Ball</span>
           <span class="pips" id="cpuPips" title="Cards in the CPU's hand"></span>
         </span>
@@ -553,6 +569,15 @@
 
         <h3>The computer</h3>
         <p>It always answers when it can, and it keeps track of which cards are gone before it picks a shot.</p>
+        <p>On Hard it holds one more card, always picks its best shot, saves Pump Fake for big moments and remembers when you let a shot go.</p>
+      </div>
+</dialog>
+
+<dialog class="rules level" id="level" aria-labelledby="levelHead">
+      <div class="head"><h2 id="levelHead">New game</h2><button class="ghost" id="closeLevel" type="button">Close</button></div>
+      <div class="body">
+        <button class="lvl-pick" type="button" data-level="normal"><b>Normal</b><span>Plays well, but doesn't always pick its best shot.</span></button>
+        <button class="lvl-pick" type="button" data-level="hard"><b>Hard</b><span>Plays its best every time and holds 6 cards.</span></button>
       </div>
 </dialog>
 
@@ -614,11 +639,16 @@
   let shownView = '';
   let ballAt = '';
 
-  function newGame() {
+  // The level you last picked comes back on your next visit.
+  const LEVEL_KEY = 'crossover-level';
+  function savedLevel() { try { return localStorage.getItem(LEVEL_KEY) === 'hard' ? 'hard' : 'normal'; } catch (e) { return 'normal'; } }
+
+  function newGame(level) {
     const deck = [];
     for (const [k, c] of Object.entries(CARDS)) for (let i = 0; i < c.count; i++) deck.push(k);
+    try { localStorage.setItem(LEVEL_KEY, level); } catch (e) {}
     S = {
-      v: RULES_VERSION,
+      v: RULES_VERSION, level, known: null,
       score: { you: 0, cpu: 0 }, poss: 'you',
       hands: { you: [], cpu: [] }, deck: shuffle(deck), discard: [],
       phase: 'shoot', sel: null, cur: null, last: null, showLast: false, flip: false,
@@ -631,8 +661,8 @@
   }
 
   // ---------- Cards ----------
-  // Behind on the scoreboard? You hold 6 cards instead of 5.
-  const handSize = (w) => HAND + (S.score[w] < S.score[other(w)] ? 1 : 0);
+  // Behind on the scoreboard? You hold 6 cards instead of 5. On Hard the CPU holds one more: 6, or 7 when behind.
+  const handSize = (w) => HAND + (w === 'cpu' && S.level === 'hard' ? 1 : 0) + (S.score[w] < S.score[other(w)] ? 1 : 0);
   function draw(w) {
     if (!S.deck.length) { S.deck = shuffle(S.discard); S.discard = []; }
     if (S.deck.length) S.hands[w].push({ id: ++uid, key: S.deck.pop() });
@@ -642,27 +672,48 @@
   }
   const hasShot = (w) => S.hands[w].some((c) => isShot(c.key));
   const find = (w, pred) => S.hands[w].find(pred) || null;
-  function take(w, card) { S.hands[w] = S.hands[w].filter((c) => c.id !== card.id); return card; }
+  function take(w, card) {
+    S.hands[w] = S.hands[w].filter((c) => c.id !== card.id);
+    // Hard remembers the cards you held when you let its shot go. Each card you play that can't stop that shot
+    // counts as one of those old cards leaving your hand.
+    if (w === 'you' && S.known && !canAnswer(card.key, S.known.shot) && --S.known.old <= 0) S.known = null;
+    return card;
+  }
 
   // ---------- Computer ----------
   // Picks the shot worth the most, given the chance you hold something that stops it.
   // It counts the cards it can't see: the whole deck minus its own hand and everything already played.
+  // Normal picks a shot at random 1 time in 5. Hard never does.
   function cpuPickShot() {
+    const hard = S.level === 'hard';
     const shots = S.hands.cpu.filter((c) => isShot(c.key));
-    if (Math.random() < 0.2) return shots[Math.floor(Math.random() * shots.length)];
+    if (!hard && Math.random() < 0.2) return shots[Math.floor(Math.random() * shots.length)];
     const unseen = {};
     for (const [k, c] of Object.entries(CARDS)) unseen[k] = c.count;
     for (const c of S.hands.cpu) unseen[c.key]--;
     for (const k of S.discard) unseen[k]--;
     const pool = Object.values(unseen).reduce((a, b) => a + Math.max(0, b), 0);
     const k = S.hands.you.length;
+    // Chance that n cards drawn from the pool miss every one of the good cards.
+    const miss = (pool, good, n) => {
+      let none = 1;
+      for (let i = 0; i < n; i++) none *= Math.max(0, pool - good - i) / Math.max(1, pool - i);
+      return none;
+    };
     // Chance your hand holds at least one of these cards.
     const pHolds = (keys) => {
       let good = 0;
       for (const a of keys) good += Math.max(0, unseen[a]);
-      let none = 1;
-      for (let i = 0; i < k; i++) none *= Math.max(0, pool - good - i) / Math.max(1, pool - i);
-      return 1 - none;
+      const kn = hard && S.known;
+      if (!kn) return 1 - miss(pool, good, k);
+      // Hard: the cards left from when you let its shot go held nothing that stops that shot.
+      const lacking = Object.keys(CARDS).filter((a) => canAnswer(a, kn.shot));
+      const old = Math.min(kn.old, k);
+      let poolOld = pool, goodOld = 0;
+      for (const a of lacking) poolOld -= Math.max(0, unseen[a]);
+      for (const a of keys) if (!lacking.includes(a)) goodOld += Math.max(0, unseen[a]);
+      const missOld = poolOld >= old ? miss(poolOld, goodOld, old) : 1;
+      return 1 - missOld * miss(pool, good, k - old);
     };
     const fake = !!find('cpu', (c) => c.key === 'pumpfake');
     let best = shots[0], bestEv = -Infinity;
@@ -679,6 +730,14 @@
     const prefs = ['steal', basic, 'block', 'foul'].filter((a) => a && canAnswer(a, shot));
     for (const a of prefs) { const c = find('cpu', (x) => x.key === a); if (c) return c; }
     return null;
+  }
+  // Normal plays Pump Fake whenever you answer. Hard saves it for a 3-point shot, beating a Steal or Close Out,
+  // the winning shot, or when it holds two.
+  function cpuFakes(shot, ans) {
+    if (S.level !== 'hard') return true;
+    const pts = CARDS[shot].pts;
+    return pts >= 3 || ans === 'steal' || ans === 'closeout' || S.score.cpu + pts >= TARGET
+      || S.hands.cpu.filter((c) => c.key === 'pumpfake').length >= 2;
   }
 
   // ---------- Rules ----------
@@ -720,6 +779,7 @@
     while (!hasShot(w) && swaps < 50) {
       S.discard.push(...S.hands[w].map((c) => c.key));
       S.hands[w] = [];
+      if (w === 'you') S.known = null;
       refill(w);
       swaps++;
     }
@@ -765,8 +825,8 @@
       if (!card || !canAnswer(card.key, S.cur.shot.key)) return;
       S.cur.ans = take('you', card);
       const x = find('cpu', (c) => c.key === 'pumpfake');
-      if (x) S.cur.cross = take('cpu', x);
-    }
+      if (x && cpuFakes(S.cur.shot.key, card.key)) S.cur.cross = take('cpu', x);
+    } else if (S.level === 'hard') S.known = { shot: S.cur.shot.key, old: S.hands.you.length };
     S.sel = null;
     finish();
   }
@@ -942,6 +1002,7 @@
     $('#tYou').classList.toggle('has-ball', S.poss === 'you');
     $('#tCpu').classList.toggle('has-ball', S.poss === 'cpu');
     $('#cpuPips').innerHTML = S.hands.cpu.map(() => '<i></i>').join('');
+    $('#lvlTag').hidden = S.level !== 'hard';
 
     // Status
     const st = {
@@ -1025,8 +1086,13 @@
     if (S.phase === 'answer') answer(true);
     else if (S.phase === 'counter') counter(false);
   });
-  $('#newGame').addEventListener('click', newGame);
-  $('#again').addEventListener('click', newGame);
+  // New game and Play again ask Normal or Hard first, with the current level ready to pick.
+  function askLevel() { $('#level').showModal(); $(`.lvl-pick[data-level="${S.level || 'normal'}"]`).focus(); }
+  $('#newGame').addEventListener('click', askLevel);
+  $('#again').addEventListener('click', askLevel);
+  for (const b of document.querySelectorAll('.lvl-pick')) b.addEventListener('click', () => { $('#level').close(); newGame(b.dataset.level); });
+  $('#closeLevel').addEventListener('click', () => $('#level').close());
+  $('#level').addEventListener('click', (e) => { if (e.target === $('#level')) $('#level').close(); });
   $('#howTo').addEventListener('click', () => $('#rules').showModal());
   $('#closeRules').addEventListener('click', () => $('#rules').close());
   // A tap on the dimmed page outside the box closes it too.
@@ -1090,7 +1156,7 @@
       S = data.S; uid = data.uid || 0;
       if (S.phase === 'busy') { S.phase = 'shoot'; if (S.cur) { S.hands.you.push(S.cur.shot); S.cur = null; } }
       render();
-    } else newGame();
+    } else newGame(savedLevel());
   }
   window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
 })();
