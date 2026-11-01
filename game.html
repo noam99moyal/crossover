@@ -569,7 +569,7 @@
 
         <h3>The computer</h3>
         <p>It always answers when it can, and it keeps track of which cards are gone before it picks a shot.</p>
-        <p>On Hard it holds one more card, always picks its best shot, saves Pump Fake for big moments and remembers when you let a shot go.</p>
+        <p>On Hard it always holds 6 cards, picks its best shot every time, saves Pump Fake for big moments and remembers when you let a shot go.</p>
       </div>
 </dialog>
 
@@ -661,8 +661,8 @@
   }
 
   // ---------- Cards ----------
-  // Behind on the scoreboard? You hold 6 cards instead of 5. On Hard the CPU holds one more: 6, or 7 when behind.
-  const handSize = (w) => HAND + (w === 'cpu' && S.level === 'hard' ? 1 : 0) + (S.score[w] < S.score[other(w)] ? 1 : 0);
+  // Behind on the scoreboard? You hold 6 cards instead of 5. On Hard the CPU always holds 6. Nobody holds more than 6.
+  const handSize = (w) => (w === 'cpu' && S.level === 'hard' ? HAND + 1 : HAND + (S.score[w] < S.score[other(w)] ? 1 : 0));
   function draw(w) {
     if (!S.deck.length) { S.deck = shuffle(S.discard); S.discard = []; }
     if (S.deck.length) S.hands[w].push({ id: ++uid, key: S.deck.pop() });
